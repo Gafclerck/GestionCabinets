@@ -42,7 +42,7 @@ def affecter(dossier_id: int, data: DossierAffectation, db: SessionDep, current_
 
 @router.patch("/{dossier_id}/statut")
 def changer_statut(dossier_id: int, data: DossierStatutUpdate, db: SessionDep, current_user: CurrentUser) -> DossierRead:
-    return update_statut(dossier_id, data, db)
+    return update_statut(dossier_id, data, db, current_user)
 
 
 @router.delete("/{dossier_id}", status_code=status.HTTP_204_NO_CONTENT)
