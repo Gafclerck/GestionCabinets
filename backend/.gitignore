@@ -73,6 +73,9 @@ alembic.db
 # Docker
 .dockerignore
 
+# Uploaded files
+uploads/
+
 # Temporary files
 *.tmp
 *.temp

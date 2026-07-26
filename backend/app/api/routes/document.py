@@ -1,0 +1,51 @@
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException
+from fastapi.responses import FileResponse
+
+from app.core.deps import SessionDep, CurrentUser
+from app.core.storage import MAX_FILE_SIZE, ALLOWED_MIME_TYPES
+from app.services.document_service import (
+    upload_document,
+    list_documents,
+    get_document,
+    get_file_path,
+    delete_document,
+)
+
+router = APIRouter()
+
+@router.post("/dossier/{dossier_id}", status_code=201)
+async def upload(
+    dossier_id: int,
+    db: SessionDep,
+    current_user: CurrentUser,
+    fichier: UploadFile = File(...),
+    description: str = Form(""),
+    confidentiel: bool = Form(False),
+):
+    if fichier.content_type not in ALLOWED_MIME_TYPES:
+        raise HTTPException(400, "Type de fichier non supporte")
+    content = await fichier.read()
+    if len(content) > MAX_FILE_SIZE:
+        raise HTTPException(413, "Fichier trop volumineux (max 10 Mo)")
+    return upload_document(dossier_id, fichier.filename, fichier.content_type, content, description, confidentiel, current_user, db)
+
+
+@router.get("/dossier/{dossier_id}")
+def list_all(dossier_id: int, db: SessionDep, current_user: CurrentUser):
+    return list_documents(dossier_id, current_user, db)
+
+
+@router.get("/{doc_id}")
+def get_one(doc_id: int, db: SessionDep, current_user: CurrentUser):
+    return get_document(doc_id, current_user, db)
+
+
+@router.get("/{doc_id}/fichier")
+def download(doc_id: int, db: SessionDep, current_user: CurrentUser):
+    file_path = get_file_path(doc_id, current_user, db)
+    return FileResponse(path=file_path)
+
+
+@router.delete("/{doc_id}", status_code=204)
+def delete(doc_id: int, db: SessionDep, current_user: CurrentUser):
+    delete_document(doc_id, current_user, db)
