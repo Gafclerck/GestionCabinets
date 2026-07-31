@@ -34,7 +34,7 @@ function GerantCentralDashboard() {
     return avs.map((av) => ({
       ...av,
       dossiersActifs: actifs.filter((d) => d.avocat_assigne_id === av.id).length,
-    })).sort((a, b) => b.dossiersActifs - a.dossiersActifs);
+    })).filter((av) => av.dossiersActifs > 0).sort((a, b) => b.dossiersActifs - a.dossiersActifs);
   }, [actifs, utilisateurs]);
 
   const transfertsPendants = useMemo(() => dossiers.filter((d) => d.statut === "en_attente_affectation"), [dossiers]);
@@ -80,7 +80,7 @@ function GerantCentralDashboard() {
           </SectionCard>
 
           <SectionCard title="Répartition par avocat" subtitle="Dossiers actifs assignés">
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 max-h-[420px] overflow-y-auto pr-1">
               {repartitionAvocats.map((av) => {
                 const maxC = Math.max(...repartitionAvocats.map((a) => a.dossiersActifs), 1);
                 const pct = (av.dossiersActifs / maxC) * 100;

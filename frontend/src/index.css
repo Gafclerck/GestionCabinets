@@ -5,8 +5,7 @@
 :root {
   --font-size: 16px;
   --font-family: 'Inter', system-ui, sans-serif;
-
-  --background: #F5F2ED;
+  --background1: #F5F2ED;
   --foreground: #27272A;
   --card: #FDFCFA;
   --card-foreground: #27272A;
@@ -39,7 +38,7 @@
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #253657;
   --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: rgba(255,255,255,0.1);
+  --sidebar-border: rgba(255, 255, 255, 0.1);
   --sidebar-ring: #9C7A3C;
 
   --success: #2F7A54;
@@ -131,10 +130,12 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-family);
   }
+
   html {
     font-size: var(--font-size);
   }
