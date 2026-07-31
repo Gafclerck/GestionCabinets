@@ -118,6 +118,7 @@ def create_dossier(data: DossierCreate, user: User, db: Session) -> DossierRead:
         priorite=data.priorite,
     )
     db.add(dossier)
+    db.flush()
     histo = HistoriqueAction(
         dossier_id=dossier.id,
         user_id=user.id,

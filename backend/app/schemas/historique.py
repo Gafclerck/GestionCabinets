@@ -7,8 +7,8 @@ class HistoriqueActionRead(BaseModel):
     dossier_id : int
     user_id: int
     action: str
-    ancienne_valeur: dict
-    nouvelle_valeur: dict
+    ancienne_valeur: Optional[dict] = Field(default=None)
+    nouvelle_valeur: Optional[dict] = Field(default=None)
     commentaire: Optional[str] = Field(default=None)
     created_at: datetime
 

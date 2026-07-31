@@ -14,7 +14,7 @@ import Agences from "../pages/Agences";
 import AgenceDetail from "../pages/Agences/Detail";
 import Utilisateurs from "../pages/Utilisateurs";
 import UtilisateurDetail from "../pages/Utilisateurs/Detail";
-import PlaceholderPage from "../pages/PlaceholderPage";
+import Parametres from "../pages/Parametres";
 
 function PublicRoute({ children }) {
   const { user, loading } = useAuth();
@@ -47,8 +47,7 @@ export default function AppRouter() {
             <Route path="agences/:id" element={<AgenceDetail />} />
             <Route path="utilisateurs" element={<Utilisateurs />} />
             <Route path="utilisateurs/:id" element={<UtilisateurDetail />} />
-            <Route path="specialites" element={<PlaceholderPage pageId="specialites" />} />
-            <Route path="parametres" element={<PlaceholderPage pageId="parametres" />} />
+            <Route path="parametres" element={<Parametres />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/dashboard" replace />} />

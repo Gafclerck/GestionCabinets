@@ -1,6 +1,6 @@
 from fastapi import APIRouter, status
 
-from app.core.deps import CurrentUser, RequireChefCentral, SessionDep
+from app.core.deps import CurrentUser, RequireChef, SessionDep
 from app.schemas.referentiel import (
     SpecialiteRead,
     TypeAffaireCreate,
@@ -13,9 +13,11 @@ from app.services.ref_services import (
     create_type_affaire,
     get_type_affaire_by_id,
     update_type_affaire,
+    delete_type_affaire,
     create_specialite,
     get_specialite_by_id,
     update_specialite,
+    delete_specialite,
 )
 
 router = APIRouter()
@@ -38,7 +40,7 @@ def read_type_affaire(type_affaire_id: int, db: SessionDep, current_user: Curren
 def create_type_affaire_route(
     type_affaire: TypeAffaireCreate,
     db: SessionDep,
-    current_user: RequireChefCentral,
+    current_user: RequireChef,
 ) -> TypeAffaireRead:
     return create_type_affaire(type_affaire, db)
 
@@ -48,9 +50,18 @@ def update_type_affaire_route(
     type_affaire_id: int,
     data: TypeAffaireUpdate,
     db: SessionDep,
-    current_user: RequireChefCentral,
+    current_user: RequireChef,
 ) -> TypeAffaireRead:
     return update_type_affaire(type_affaire_id, data, db)
+
+
+@router.delete("/type_affaires/{type_affaire_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_type_affaire_route(
+    type_affaire_id: int,
+    db: SessionDep,
+    current_user: RequireChef,
+) -> None:
+    delete_type_affaire(type_affaire_id, db)
 
 
 # --- Specialite ---
@@ -70,7 +81,7 @@ def read_specialite(specialite_id: int, db: SessionDep, current_user: CurrentUse
 def create_specialite_route(
     specialite: SpecialiteCreate,
     db: SessionDep,
-    current_user: RequireChefCentral,
+    current_user: RequireChef,
 ) -> SpecialiteRead:
     return create_specialite(specialite, db)
 
@@ -80,6 +91,15 @@ def update_specialite_route(
     specialite_id: int,
     data: SpecialiteUpdate,
     db: SessionDep,
-    current_user: RequireChefCentral,
+    current_user: RequireChef,
 ) -> SpecialiteRead:
     return update_specialite(specialite_id, data, db)
+
+
+@router.delete("/specialites/{specialite_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_specialite_route(
+    specialite_id: int,
+    db: SessionDep,
+    current_user: RequireChef,
+) -> None:
+    delete_specialite(specialite_id, db)
