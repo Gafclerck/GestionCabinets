@@ -1,6 +1,5 @@
 from datetime import datetime
-from sqlalchemy import String, DateTime, Text, Integer, ForeignKey, func, Float, Boolean
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import String, DateTime, Text, Integer, ForeignKey, func, Float, Boolean, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.base import Base
 from typing import Optional
@@ -13,7 +12,7 @@ class AnalyseIA(Base):
     dossier_id: Mapped[int] = mapped_column(ForeignKey("dossier.id"), nullable=False)
     resume_genere: Mapped[str] = mapped_column(Text, nullable=False)
     type_detecte: Mapped[str] = mapped_column(String(100), nullable=False)
-    mots_cles: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    mots_cles: Mapped[dict] = mapped_column(JSON, nullable=False)
     agence_suggeree_id: Mapped[int | None] = mapped_column(ForeignKey("agence.id"))
     avocat_suggere_id: Mapped[int | None] = mapped_column(ForeignKey("user.id"))
     score_confiance: Mapped[float] = mapped_column(Float, nullable=False)

@@ -318,7 +318,13 @@ def wipe(session: Session) -> None:
         "discussion", "analyse_ia", "user_specialite", "dossier",
         '"user"', "client", "agence", "type_affaire", "specialite",
     ]
-    session.execute(text(f"TRUNCATE TABLE {', '.join(tables)} RESTART IDENTITY CASCADE"))
+    if engine.dialect.name == "sqlite":
+        # SQLite ne supporte pas TRUNCATE/RESTART IDENTITY ; DELETE suffit
+        # (les INTEGER PRIMARY KEY repartent a 1 sur table vide).
+        for table in tables:
+            session.execute(text(f"DELETE FROM {table}"))
+    else:
+        session.execute(text(f"TRUNCATE TABLE {', '.join(tables)} RESTART IDENTITY CASCADE"))
     session.commit()
     if UPLOAD_DIR.exists():
         shutil.rmtree(UPLOAD_DIR)

@@ -1,6 +1,5 @@
-from sqlalchemy import String, DateTime, Text, Integer, ForeignKey, Index, func
+from sqlalchemy import String, DateTime, Text, Integer, ForeignKey, Index, Enum as SAEnum, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy.dialects.postgresql import ENUM
 from app.core.base import Base
 from datetime import datetime
 from typing import List, Optional
@@ -34,7 +33,7 @@ class Dossier(Base):
     reference: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
     titre: Mapped[str] = mapped_column(String(255), nullable=False)
     description_initiale: Mapped[str] = mapped_column(Text, nullable=True)
-    statut: Mapped[StatutDossier] = mapped_column(ENUM(StatutDossier), nullable=False, default=StatutDossier.EN_ATTENTE)
+    statut: Mapped[StatutDossier] = mapped_column(SAEnum(StatutDossier, native_enum=False, length=50), nullable=False, default=StatutDossier.EN_ATTENTE)
     priorite: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
 
     date_reception: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())

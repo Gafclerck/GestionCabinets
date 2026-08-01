@@ -1,4 +1,4 @@
-// ─── Rôles (backend enum) ─────────────────────────────────────────────────────
+//  Rôles (backend enum) 
 export const ROLES = {
   chef_central: "chef_central",
   chef_agence: "chef_agence",
@@ -11,7 +11,7 @@ export const ROLE_LABELS = {
   avocat: "Avocat",
 };
 
-// ─── Statuts dossier (aligned with backend StatutDossier enum) ────────────────
+//  Statuts dossier (aligned with backend StatutDossier enum) 
 export const STATUT_DOSSIER = {
   en_attente: "en_attente",
   en_attente_affectation: "en_attente_affectation",
@@ -44,7 +44,7 @@ export function isActif(statut) {
   return STATUTS_ACTIFS.includes(statut);
 }
 
-// ─── Priorité ─────────────────────────────────────────────────────────────────
+// ─── Priorité 
 export const PRIORITE_LABELS = {
   1: "Très basse",
   2: "Basse",
@@ -57,17 +57,7 @@ export const PRIORITE_SHORT = {
   1: "P1", 2: "P2", 3: "P3", 4: "P4", 5: "P5",
 };
 
-// ─── Types d'affaire ──────────────────────────────────────────────────────────
-export const TYPES_AFFAIRE = [
-  "Droit commercial", "Droit des sociétés", "Droit du travail",
-  "Droit de la famille", "Droit immobilier", "Droit foncier",
-  "Droit maritime", "Droit pénal économique", "Droit pénal",
-  "Propriété intellectuelle", "Procédures collectives",
-  "Recouvrement de créances", "Droit des successions",
-  "Droit administratif", "Arbitrage OHADA",
-];
-
-// ─── Types de client ──────────────────────────────────────────────────────────
+//  Types de client 
 export const TYPE_CLIENT = {
   PHYSIQUE: "PHYSIQUE",
   MORALE: "MORALE",
@@ -78,5 +68,5 @@ export const TYPE_CLIENT_LABELS = {
   MORALE: "Personne morale",
 };
 
-// ─── UI constants ─────────────────────────────────────────────────────────────
+//  UI constants 
 export const SIDEBAR_WIDTH = 232;

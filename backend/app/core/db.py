@@ -4,10 +4,14 @@ from app.core.config import settings
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import OperationalError
 
+# Priorite : TESTING > DEVEL > PRODUCTION. En l'absence de mode explicite
+# (les trois False), on retombe sur DATABASE_URL (production par defaut).
 if settings.TESTING_MODE:
     URL = settings.DATABASE_URL_TEST
 elif settings.DEVEL_MODE:
     URL = settings.DATABASE_URL_DEV
+elif settings.PRODUCTION_MODE:
+    URL = settings.DATABASE_URL
 else:
     URL = settings.DATABASE_URL
 
