@@ -14,7 +14,8 @@ import PrioriteStars from "../../components/ui/PrioriteStars";
 import Avatar from "../../components/ui/Avatar";
 import AffectationModal from "../../components/dossiers/AffectationModal";
 import TransferModal from "../../components/dossiers/TransferModal";
-
+import Onglethistorique from "../../components/dossiers/Onglethistorique";
+import Ongletdocument from "../../components/dossiers/Ongletdocument";
 function Tab({ label, active, onClick }) {
   return (
     <button onClick={onClick}
@@ -229,16 +230,10 @@ export default function DossierDetail() {
           </div>
         )}
         {activeTab === "documents" && (
-          <div className="flex flex-col items-center justify-center py-16 gap-3">
-            <div className="w-14 h-14 rounded-3xl bg-secondary flex items-center justify-center text-muted-foreground"><FileText size={24} /></div>
-            <p className="text-sm font-medium text-muted-foreground">Documents — disponible prochainement</p>
-          </div>
+          <Ongletdocument />
         )}
         {activeTab === "historique" && (
-          <div className="flex flex-col items-center justify-center py-16 gap-3">
-            <div className="w-14 h-14 rounded-3xl bg-secondary flex items-center justify-center text-muted-foreground"><Clock size={24} /></div>
-            <p className="text-sm font-medium text-muted-foreground">Historique — disponible prochainement</p>
-          </div>
+          <Onglethistorique />
         )}
         {activeTab === "messagerie" && (
           <div className="flex flex-col items-center justify-center py-16 gap-3">
