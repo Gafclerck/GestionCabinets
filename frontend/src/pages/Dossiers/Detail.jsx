@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useParams, useNavigate, Navigate } from "react-router-dom";
 import {
   ArrowLeft, ChevronRight, User, Home, FileText,
-  CheckCircle, MessageSquare, Clock, Repeat,
+  CheckCircle, Clock, Repeat,
 } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 import { useDossiers } from "../../hooks/useDossiers";
@@ -12,8 +12,10 @@ import { ROLE_LABELS } from "../../lib/constants";
 import StatusBadge from "../../components/ui/StatusBadge";
 import PrioriteStars from "../../components/ui/PrioriteStars";
 import Avatar from "../../components/ui/Avatar";
+import Skeleton from "../../components/ui/Skeleton";
 import AffectationModal from "../../components/dossiers/AffectationModal";
 import TransferModal from "../../components/dossiers/TransferModal";
+import Messagerie from "../../components/dossiers/Messagerie";
 
 function Tab({ label, active, onClick }) {
   return (
@@ -47,6 +49,37 @@ function InfoPair({ label, value, mono }) {
   );
 }
 
+function DetailSkeleton() {
+  return (
+    <div className="flex flex-col h-full overflow-hidden bg-background">
+      <div className="bg-card border-b border-border shrink-0">
+        <div className="px-8 pt-5 pb-4">
+          <Skeleton className="h-4 w-40 mb-4" />
+          <div className="flex items-center gap-2 mb-2">
+            <Skeleton className="h-3 w-32" />
+            <Skeleton className="h-5 w-28 rounded-full" />
+          </div>
+          <Skeleton className="h-7 w-[420px] max-w-full mb-2" />
+          <Skeleton className="h-3 w-64" />
+        </div>
+      </div>
+      <div className="flex-1 overflow-y-auto p-8">
+        <div className="grid grid-cols-[1fr_320px] gap-6 max-w-[1280px]">
+          <div className="flex flex-col gap-4">
+            <Skeleton className="h-40 rounded-2xl" />
+            <Skeleton className="h-24 rounded-2xl" />
+            <Skeleton className="h-56 rounded-2xl" />
+          </div>
+          <div className="flex flex-col gap-4">
+            <Skeleton className="h-48 rounded-2xl" />
+            <Skeleton className="h-40 rounded-2xl" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const DEMO_TIMELINE = [
   { id: "t1", label: "Dossier créé et enregistré", actor: "Mariama Diallo", date: "il y a 3 jours", color: "bg-primary" },
   { id: "t2", label: "Analyse IA déclenchée", actor: "Système automatique", date: "il y a 3 jours", color: "bg-accent" },
@@ -66,11 +99,7 @@ export default function DossierDetail() {
   const dossier = dossiers.find((d) => d.reference === reference);
 
   if (!user) return <Navigate to="/login" replace />;
-  if (loading) return (
-    <div className="flex-1 flex items-center justify-center bg-background">
-      <p className="text-sm text-muted-foreground">Chargement...</p>
-    </div>
-  );
+  if (loading) return <DetailSkeleton />;
   if (!dossier) return <Navigate to="/dossiers" replace />;
 
   const agence = agences.find((a) => a.id === (dossier?.agence_assigne_id || dossier?.agence_receptrice_id));
@@ -120,7 +149,7 @@ export default function DossierDetail() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-8">
+      <div className={`flex-1 ${activeTab === "messagerie" ? "overflow-hidden p-8 min-h-0" : "overflow-y-auto p-8"}`}>
         {activeTab === "apercu" && (
           <div className="grid grid-cols-[1fr_320px] gap-6 max-w-[1280px]">
             <div className="flex flex-col gap-4">
@@ -241,9 +270,8 @@ export default function DossierDetail() {
           </div>
         )}
         {activeTab === "messagerie" && (
-          <div className="flex flex-col items-center justify-center py-16 gap-3">
-            <div className="w-14 h-14 rounded-3xl bg-secondary flex items-center justify-center text-muted-foreground"><MessageSquare size={24} /></div>
-            <p className="text-sm font-medium text-muted-foreground">Messagerie — disponible prochainement</p>
+          <div className="h-full flex flex-col min-h-0">
+            <Messagerie dossier={dossier} utilisateurs={utilisateurs} />
           </div>
         )}
       </div>
