@@ -24,7 +24,9 @@ async def upload(
 ):
     if fichier.content_type not in ALLOWED_MIME_TYPES:
         raise HTTPException(400, "Type de fichier non supporte")
-    content = await fichier.read()
+    # On lit au maximum MAX_FILE_SIZE + 1 octets : un fichier plus gros est
+    # refuse sans jamais charger l'integralite en memoire.
+    content = await fichier.read(MAX_FILE_SIZE + 1)
     if len(content) > MAX_FILE_SIZE:
         raise HTTPException(413, "Fichier trop volumineux (max 10 Mo)")
     return upload_document(dossier_id, fichier.filename, fichier.content_type, content, description, confidentiel, current_user, db)

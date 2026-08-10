@@ -9,7 +9,12 @@ from app.models.User import User
 from app.models.HistoriqueAction import HistoriqueAction
 from app.schemas.document import DocumentRead
 from app.core.storage import UPLOAD_DIR
-from app.services.access import get_dossier_or_404, verify_dossier_access
+from app.services.access import (
+    get_dossier_or_404,
+    verify_dossier_access,
+    verify_document_access,
+    can_see_confidential,
+)
 
 
 def _to_read(doc: Document) -> DocumentRead:
@@ -76,26 +81,24 @@ def upload_document(dossier_id: int, nom_fichier: str, content_type: str | None,
 def list_documents(dossier_id: int, user: User, db: Session) -> list[DocumentRead]:
     dossier = get_dossier_or_404(dossier_id, db)
     verify_dossier_access(dossier, user)
-    documents = (
-        db.query(Document)
-        .filter(Document.dossier_id == dossier_id, Document.supprime_le.is_(None))
-        .order_by(Document.created_at.desc())
-        .all()
-    )
+    query = db.query(Document).filter(Document.dossier_id == dossier_id, Document.supprime_le.is_(None))
+    if not can_see_confidential(dossier, user):
+        query = query.filter(Document.confidentiel.is_(False))
+    documents = query.order_by(Document.created_at.desc()).all()
     return [_to_read(doc) for doc in documents]
 
 
 def get_document(doc_id: int, user: User, db: Session) -> DocumentRead:
     document = get_document_or_404(doc_id, db)
     dossier = get_dossier_or_404(document.dossier_id, db)
-    verify_dossier_access(dossier, user)
+    verify_document_access(document, dossier, user)
     return _to_read(document)
 
 
 def get_file_for_download(doc_id: int, user: User, db: Session) -> tuple[Path, str]:
     document = get_document_or_404(doc_id, db)
     dossier = get_dossier_or_404(document.dossier_id, db)
-    verify_dossier_access(dossier, user)
+    verify_document_access(document, dossier, user)
     file_path = Path(document.chemin_stockage)
     if not file_path.exists():
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Fichier physique non trouve")
@@ -106,7 +109,7 @@ def get_file_for_download(doc_id: int, user: User, db: Session) -> tuple[Path, s
 def delete_document(doc_id: int, user: User, db: Session) -> None:
     document = get_document_or_404(doc_id, db)
     dossier = get_dossier_or_404(document.dossier_id, db)
-    verify_dossier_access(dossier, user)
+    verify_document_access(document, dossier, user)
 
     document.supprime_le = func.now()
 

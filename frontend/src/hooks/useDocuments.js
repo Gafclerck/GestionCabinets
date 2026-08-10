@@ -1,24 +1,24 @@
 import { useState, useEffect, useCallback } from "react";
-import { historiqueService } from "../services/historiqueService";
+import { documentService } from "../services/documentService";
 
-export function useHistorique(id) {
+export function useDocuments(dossierId) {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const fetchData = useCallback(async () => {
-    if (!id) { setLoading(false); return; }
+    if (!dossierId) { setLoading(false); return; }
     setLoading(true);
     setError(null);
     try {
-      const result = await historiqueService.getById(id);
+      const result = await documentService.getAll(dossierId);
       setData(result);
     } catch (err) {
-      setError(err.response?.data?.detail || "Erreur lors du chargement de l'historique");
+      setError(err.response?.data?.detail || "Erreur lors du chargement des documents");
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [dossierId]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 

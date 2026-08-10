@@ -13,3 +13,8 @@ class HistoriqueActionRead(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class HistoriqueActionPage(BaseModel):
+    items: list[HistoriqueActionRead]
+    total: int
