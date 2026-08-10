@@ -73,6 +73,9 @@ alembic.db
 # Docker
 .dockerignore
 
+# Uploaded files
+uploads/
+
 # Temporary files
 *.tmp
 *.temp
@@ -86,3 +89,4 @@ AGENTS.md
 COMMENTS.md
 TODO.md
 OUT_OF_SCOPE.md
+DECISIONS.md

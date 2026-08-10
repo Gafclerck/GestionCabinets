@@ -20,7 +20,6 @@ const ROUTE_TITLES = {
   clients: "Clients",
   agences: "Agences",
   utilisateurs: "Utilisateurs",
-  specialites: "Spécialités",
   parametres: "Paramètres",
 };
 

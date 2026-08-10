@@ -37,17 +37,17 @@ def read_one(dossier_id: int, db: SessionDep, current_user: CurrentUser) -> Doss
 
 @router.patch("/{dossier_id}/affecter")
 def affecter(dossier_id: int, data: DossierAffectation, db: SessionDep, current_user: RequireChef) -> DossierRead:
-    return affecter_dossier(dossier_id, data, db)
+    return affecter_dossier(dossier_id, data, db,current_user)
 
 
 @router.patch("/{dossier_id}/statut")
 def changer_statut(dossier_id: int, data: DossierStatutUpdate, db: SessionDep, current_user: CurrentUser) -> DossierRead:
-    return update_statut(dossier_id, data, db)
+    return update_statut(dossier_id, data, db, current_user)
 
 
 @router.delete("/{dossier_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete(dossier_id: int, db: SessionDep, current_user: RequireChef) -> None:
-    delete_dossier(dossier_id, db)
+    delete_dossier(dossier_id, db,current_user)
 
 
 @router.patch("/{dossier_id}/transfer")

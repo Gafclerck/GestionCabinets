@@ -6,7 +6,6 @@ import {
   Building2,
   Users,
   Contact,
-  BookOpen,
   Settings,
   LogOut,
 } from "lucide-react";
@@ -20,12 +19,11 @@ const ALL_NAV = [
   { id: "file",         label: "File d'affectation", icon: ListOrdered },
   { id: "agences",      label: "Agences",            icon: Building2 },
   { id: "utilisateurs", label: "Utilisateurs",       icon: Users },
-  { id: "specialites",  label: "Spécialités",        icon: BookOpen },
   { id: "parametres",   label: "Paramètres",         icon: Settings },
 ];
 
 const NAV_BY_ROLE = {
-  [ROLES.chef_central]:  ["dashboard", "dossiers", "clients", "file", "agences", "utilisateurs", "specialites", "parametres"],
+  [ROLES.chef_central]:  ["dashboard", "dossiers", "clients", "file", "agences", "utilisateurs", "parametres"],
   [ROLES.chef_agence]:   ["dashboard", "dossiers", "clients", "file", "parametres"],
   [ROLES.avocat]:        ["dashboard", "dossiers", "clients", "parametres"],
 };
@@ -57,7 +55,7 @@ export default function Sidebar({ user }) {
           </div>
           <div>
             <div className="text-xs font-bold text-sidebar-foreground leading-tight">
-              Cabinet Diop & Associés
+              Cabinet Bhongo-Mavoungou
             </div>
             <div className="text-[10px] text-white/45 tracking-wide">
               Gestion de cabinet

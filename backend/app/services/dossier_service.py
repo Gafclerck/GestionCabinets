@@ -7,8 +7,8 @@ from app.models.User import User, UserRole
 from app.models.Client import Client
 from app.models.Agence import Agence
 from app.models.TypeAffaire import TypeAffaire
-from app.schemas.dossier import DossierCreate, DossierAffectation, DossierStatutUpdate, DossierRead
 from app.models.HistoriqueAction import HistoriqueAction
+from app.schemas.dossier import DossierCreate, DossierAffectation, DossierStatutUpdate, DossierRead
 
 
 # Transitions de statut autorisees
@@ -20,7 +20,9 @@ TRANSITIONS_VALIDES = {
     StatutDossier.ARCHIVE: set(),
 }
 
-
+# A revoir au lieu ed filtrer et prendre les champs specifque on renvoi des models imbriques le front
+# se chargera d'afficher ce qu'il veux
+# Probleme de  dette version : du verfitting avec le front ce qui n'est pas bien
 def _to_read(d: Dossier) -> DossierRead:
     return DossierRead(
         id=d.id,
@@ -46,7 +48,7 @@ def _to_read(d: Dossier) -> DossierRead:
         date_cloture=d.date_cloture,
     )
 
-
+# A renforcer plus tard 
 def _generate_reference(db: Session) -> str:
     annee = datetime.now(timezone.utc).year
     prefixe = f"DG-{annee}-"
@@ -63,6 +65,9 @@ def _generate_reference(db: Session) -> str:
     return f"{prefixe}{num:05d}"
 
 
+# le dossier doit etre lie a un client, à une agence(au moins celle qui la soumis) et ausssi un avocat en chef 
+# (celui qui a soumis le dossier ou celui qui est le chef de l'agence)
+# le type d'affaire aussi est obligatoire
 def _verify_foreign_keys(data: DossierCreate, db: Session, agence_receptrice_id: int, avocat_en_chef_id: int) -> None:
     if not db.query(Client).filter(Client.id == data.client_id).first():
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Client non trouve")
@@ -113,6 +118,17 @@ def create_dossier(data: DossierCreate, user: User, db: Session) -> DossierRead:
         priorite=data.priorite,
     )
     db.add(dossier)
+    db.flush()
+    histo = HistoriqueAction(
+        dossier_id=dossier.id,
+        user_id=user.id,
+        action="creation",
+        ancienne_valeur=None,
+        nouvelle_valeur=DossierRead.model_validate(dossier).model_dump(mode="json"),
+        commentaire="",
+        created_at=datetime.now(timezone.utc),
+    )
+    db.add(histo)
     db.commit()
     db.refresh(dossier)
     return _to_read(dossier)
@@ -149,7 +165,7 @@ def get_dossier_by_id(dossier_id: int, user: User, db: Session) -> DossierRead:
     return _to_read(dossier)
 
 
-def affecter_dossier(dossier_id: int, data: DossierAffectation, db: Session) -> DossierRead:
+def affecter_dossier(dossier_id: int, data: DossierAffectation, db: Session,user: User) -> DossierRead:
     dossier = db.query(Dossier).filter(Dossier.id == dossier_id).first()
     if not dossier:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Dossier non trouve")
@@ -163,6 +179,7 @@ def affecter_dossier(dossier_id: int, data: DossierAffectation, db: Session) -> 
     if not db.query(Agence).filter(Agence.id == data.agence_assigne_id).first():
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Agence assignee non trouvee")
 
+    ancienne_valeur = DossierRead.model_validate(dossier).model_dump(mode="json")
     dossier.agence_assigne_id = data.agence_assigne_id
     dossier.avocat_assigne_id = data.avocat_assigne_id
     dossier.date_affectation = datetime.now(timezone.utc)
@@ -171,12 +188,24 @@ def affecter_dossier(dossier_id: int, data: DossierAffectation, db: Session) -> 
     elif dossier.statut == StatutDossier.EN_ATTENTE_AFFECTATION:
         dossier.statut = StatutDossier.EN_COURS
 
+    nouvelle_valeur = DossierRead.model_validate(dossier).model_dump(mode="json")
+    histo = HistoriqueAction(
+        dossier_id=dossier.id,
+        user_id=user.id,
+        action="affectation",
+        ancienne_valeur=ancienne_valeur,
+        nouvelle_valeur=nouvelle_valeur,
+        commentaire="",
+        created_at=datetime.now(timezone.utc),
+    )
+    db.add(histo)
     db.commit()
+
     db.refresh(dossier)
     return _to_read(dossier)
 
 
-def update_statut(dossier_id: int, data: DossierStatutUpdate, db: Session) -> DossierRead:
+def update_statut(dossier_id: int, data: DossierStatutUpdate, db: Session,user: User) -> DossierRead:
     dossier = db.query(Dossier).filter(Dossier.id == dossier_id).first()
     if not dossier:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Dossier non trouve")
@@ -189,10 +218,22 @@ def update_statut(dossier_id: int, data: DossierStatutUpdate, db: Session) -> Do
             detail=f"Transition '{dossier.statut.value}' -> '{data.statut.value}' non autorisee. Statuts valides : {statuts_valides}",
         )
 
+    ancienne_valeur = DossierRead.model_validate(dossier).model_dump(mode="json")
     dossier.statut = data.statut
     if data.statut == StatutDossier.TERMINE:
         dossier.date_cloture = datetime.now(timezone.utc)
 
+    nouvelle_valeur = DossierRead.model_validate(dossier).model_dump(mode="json")
+    histo = HistoriqueAction(
+        dossier_id=dossier.id,
+        user_id=user.id,
+        action="changement_statut",
+        ancienne_valeur=ancienne_valeur,
+        nouvelle_valeur=nouvelle_valeur,
+        commentaire="",
+        created_at=datetime.now(timezone.utc),
+    )
+    db.add(histo)
     db.commit()
     db.refresh(dossier)
     return _to_read(dossier)
@@ -205,35 +246,49 @@ def transfer_dossier(dossier_id: int, motif: str, user: User, db: Session) -> Do
     if dossier.statut == StatutDossier.ARCHIVE:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Impossible de transferer un dossier archive")
 
-    ancien_statut = dossier.statut.value
-    ancienne_agence = dossier.agence_assigne_id
+    ancienne_valeur = DossierRead.model_validate(dossier).model_dump(mode="json")
 
     dossier.statut = StatutDossier.EN_ATTENTE_AFFECTATION
     dossier.agence_assigne_id = None
     dossier.avocat_assigne_id = None
     dossier.date_affectation = None
 
-    historique = HistoriqueAction(
-        dossier_id=dossier_id,
+    nouvelle_valeur = DossierRead.model_validate(dossier).model_dump(mode="json")
+    histo = HistoriqueAction(
+        dossier_id=dossier.id,
         user_id=user.id,
         action="transfert",
-        ancienne_valeur={"statut": ancien_statut, "agence_assigne_id": ancienne_agence},
-        nouvelle_valeur={"statut": StatutDossier.EN_ATTENTE_AFFECTATION.value},
+        ancienne_valeur=ancienne_valeur,
+        nouvelle_valeur=nouvelle_valeur,
         commentaire=motif,
+        created_at=datetime.now(timezone.utc),
     )
-    db.add(historique)
+    db.add(histo)
     db.commit()
     db.refresh(dossier)
     return _to_read(dossier)
 
 
-def delete_dossier(dossier_id: int, db: Session) -> None:
+def delete_dossier(dossier_id: int, db: Session, user: User) -> None:
     dossier = db.query(Dossier).filter(Dossier.id == dossier_id).first()
     if not dossier:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Dossier non trouve")
     if dossier.statut == StatutDossier.ARCHIVE:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Dossier deja archive")
 
+    ancienne_valeur = DossierRead.model_validate(dossier).model_dump(mode="json")
     dossier.statut = StatutDossier.ARCHIVE
     dossier.date_cloture = datetime.now(timezone.utc)
+    nouvelle_valeur = DossierRead.model_validate(dossier).model_dump(mode="json")
+    histo = HistoriqueAction(
+        dossier_id=dossier_id,
+        user_id=user.id,
+        action="suppression",
+        ancienne_valeur=ancienne_valeur,
+        nouvelle_valeur=nouvelle_valeur,
+        commentaire="",
+        created_at=datetime.now(timezone.utc),
+    )
+    db.add(histo)
     db.commit()
+

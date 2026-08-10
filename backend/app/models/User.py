@@ -1,6 +1,5 @@
 from app.core.base import Base
-from sqlalchemy import Boolean, DateTime, ForeignKey, String, func
-from sqlalchemy.dialects.postgresql import ENUM
+from sqlalchemy import Boolean, DateTime, Enum as SAEnum, ForeignKey, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing import List, Optional
 from datetime import datetime
@@ -23,7 +22,7 @@ class User(Base):
     prenom: Mapped[str] = mapped_column(String(100), nullable=False)
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
-    role: Mapped[UserRole] = mapped_column(ENUM(UserRole, create_type=True), nullable=False)
+    role: Mapped[UserRole] = mapped_column(SAEnum(UserRole, native_enum=False, length=50), nullable=False)
 
     actif: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())

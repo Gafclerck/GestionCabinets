@@ -10,8 +10,18 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# On lit l'URL depuis notre .env
-config.set_main_option("sqlalchemy.url", settings.DATABASE_URL_DEV)
+# On lit l'URL depuis notre .env.
+# Priorite : TESTING > DEVEL > PRODUCTION. En l'absence de mode explicite,
+# on retombe sur DATABASE_URL.
+if settings.TESTING_MODE:
+    URL = settings.DATABASE_URL_TEST
+elif settings.DEVEL_MODE:
+    URL = settings.DATABASE_URL_DEV
+elif settings.PRODUCTION_MODE:
+    URL = settings.DATABASE_URL
+else:
+    URL = settings.DATABASE_URL
+config.set_main_option("sqlalchemy.url", URL)
 
 target_metadata = Base.metadata
 

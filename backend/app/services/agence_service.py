@@ -4,7 +4,6 @@ from sqlalchemy.orm import Session
 from app.schemas.agence import AgenceCreate, AgenceUpdate, AgenceResponse
 from app.models.Agence import Agence
 
-
 def create_agence(db: Session, agence_data: AgenceCreate) -> AgenceResponse:
     existing = db.query(Agence).filter(Agence.nom == agence_data.nom).first()
     if existing:

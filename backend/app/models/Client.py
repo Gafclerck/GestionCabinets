@@ -1,7 +1,6 @@
 from datetime import datetime
-from sqlalchemy import String, DateTime, Index, func
+from sqlalchemy import String, DateTime, Index, Enum as SAEnum, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy.dialects.postgresql import ENUM
 from app.core.base import Base
 from typing import List
 from enum import Enum
@@ -18,7 +17,7 @@ class Client(Base):
     )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    type_client: Mapped[ClientType] = mapped_column(ENUM(ClientType), nullable=False)
+    type_client: Mapped[ClientType] = mapped_column(SAEnum(ClientType, native_enum=False, length=50), nullable=False)
     nom: Mapped[str] = mapped_column(String(255), nullable=False)
     telephone: Mapped[str] = mapped_column(String(20), nullable=False)
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)

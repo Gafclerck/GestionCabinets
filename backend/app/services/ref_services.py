@@ -3,6 +3,8 @@ from sqlalchemy.orm import Session
 
 from app.models.Specialite import Specialite
 from app.models.TypeAffaire import TypeAffaire
+from app.models.Dossier import Dossier
+from app.models.UserSpecialite import UserSpecialite
 from app.schemas.referentiel import (
     TypeAffaireRead,
     TypeAffaireCreate,
@@ -25,7 +27,7 @@ def create_type_affaire(data: TypeAffaireCreate, db: Session) -> TypeAffaireRead
     if existing:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"TypeAffaire with libelle '{data.libelle}' already exists.",
+            detail=f"Un type d'affaire avec le libelle '{data.libelle}' existe deja.",
         )
     code = generate_code(data.libelle)
     existing_code = db.query(TypeAffaire).filter_by(code=code).first()
@@ -71,7 +73,7 @@ def update_type_affaire(type_affaire_id: int, data: TypeAffaireUpdate, db: Sessi
         if duplicate:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"TypeAffaire with libelle '{new_libelle}' already exists.",
+                detail=f"Un type d'affaire avec le libelle '{new_libelle}' existe deja.",
             )
         update_data["libelle"] = new_libelle
     for field, value in update_data.items():
@@ -89,7 +91,7 @@ def create_specialite(data: SpecialiteCreate, db: Session) -> SpecialiteRead:
     if existing:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Specialite with libelle '{data.libelle}' already exists.",
+            detail=f"Une specialite avec le libelle '{data.libelle}' existe deja.",
         )
     specialite = Specialite(**data.model_dump())
     db.add(specialite)
@@ -129,7 +131,7 @@ def update_specialite(specialite_id: int, data: SpecialiteUpdate, db: Session) -
         if duplicate:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Specialite with libelle '{new_libelle}' already exists.",
+                detail=f"Une specialite avec le libelle '{new_libelle}' existe deja.",
             )
         update_data["libelle"] = new_libelle
     for field, value in update_data.items():
@@ -137,3 +139,37 @@ def update_specialite(specialite_id: int, data: SpecialiteUpdate, db: Session) -
     db.commit()
     db.refresh(sp)
     return sp
+
+
+def delete_type_affaire(type_affaire_id: int, db: Session) -> None:
+    ta = db.query(TypeAffaire).filter(TypeAffaire.id == type_affaire_id).first()
+    if not ta:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="TypeAffaire non trouve",
+        )
+    nb_dossiers = db.query(Dossier).filter(Dossier.type_affaire_id == type_affaire_id).count()
+    if nb_dossiers > 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Impossible de supprimer : ce type d'affaire est lie a {nb_dossiers} dossier(s)",
+        )
+    db.delete(ta)
+    db.commit()
+
+
+def delete_specialite(specialite_id: int, db: Session) -> None:
+    sp = db.query(Specialite).filter(Specialite.id == specialite_id).first()
+    if not sp:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Specialite non trouvee",
+        )
+    nb_avocats = db.query(UserSpecialite).filter(UserSpecialite.specialite_id == specialite_id).count()
+    if nb_avocats > 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Impossible de supprimer : cette specialite est attribuee a {nb_avocats} avocat(s)",
+        )
+    db.delete(sp)
+    db.commit()
