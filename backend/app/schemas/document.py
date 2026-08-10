@@ -7,7 +7,6 @@ class DocumentRead(BaseModel):
     dossier_id: int
     uploaded_by_id: int
     nom_fichier: str
-    chemin_stockage: str
     type_mime: Optional[str] = None
     taille_octets: Optional[int] = None
     description: Optional[str] = None
