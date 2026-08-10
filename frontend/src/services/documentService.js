@@ -8,11 +8,6 @@ export const documentService = {
     return data;
   },
 
-  getById: async (id) => {
-    const { data } = await api.get(`${BASE}/${id}`);
-    return data;
-  },
-
   upload: async (dossierId, { fichier, description = "", confidentiel = false }) => {
     const formData = new FormData();
     formData.append("fichier", fichier);

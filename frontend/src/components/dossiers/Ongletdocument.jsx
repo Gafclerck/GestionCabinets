@@ -58,6 +58,7 @@ export default function Ongletdocument({ dossierId, usersMap }) {
   const [isConfidentiel, setIsConfidentiel] = useState(false);
   const [description, setDescription] = useState("");
   const [uploadError, setUploadError] = useState("");
+  const [actionError, setActionError] = useState("");
   const [uploading, setUploading] = useState(false);
   const [sortOrder, setSortOrder] = useState("desc");
 
@@ -142,19 +143,22 @@ export default function Ongletdocument({ dossierId, usersMap }) {
   });
 
   // L'endpoint fichier exige le header Bearer : on recupere le blob via l'API
-  // puis on ouvre l'object URL dans un nouvel onglet.
+  // puis on ouvre l'object URL dans un nouvel onglet. On libere l'URL une fois
+  // que l'onglet a charge le blob pour eviter les fuites memoires.
   const openPreview = async (doc) => {
     try {
       const tab = window.open("", "_blank");
       const response = await documentService.download(doc.id);
       const url = URL.createObjectURL(response.data);
       if (tab) {
+        tab.onload = () => URL.revokeObjectURL(url);
         tab.location.href = url;
       } else {
-        window.open(url, "_blank");
+        const win = window.open(url, "_blank");
+        if (win) win.onload = () => URL.revokeObjectURL(url);
       }
     } catch {
-      setUploadError("Impossible d'ouvrir l'apercu du fichier.");
+      setActionError("Impossible d'ouvrir l'apercu du fichier.");
     }
   };
 
@@ -170,7 +174,7 @@ export default function Ongletdocument({ dossierId, usersMap }) {
       a.remove();
       URL.revokeObjectURL(url);
     } catch {
-      setUploadError("Impossible de telecharger le fichier.");
+      setActionError("Impossible de telecharger le fichier.");
     }
   };
 
@@ -180,7 +184,7 @@ export default function Ongletdocument({ dossierId, usersMap }) {
       await documentService.remove(doc.id);
       await refetch();
     } catch {
-      setUploadError("Erreur lors de la suppression du document.");
+      setActionError("Erreur lors de la suppression du document.");
     }
   };
 
@@ -263,6 +267,21 @@ export default function Ongletdocument({ dossierId, usersMap }) {
             </div>
           )}
         </div>
+
+        {actionError && (
+          <div className="flex items-center justify-between p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-xs text-destructive">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{actionError}</span>
+            </div>
+            <button
+              onClick={() => setActionError("")}
+              className="p-1 hover:opacity-80"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
 
         {/* Liste des Documents */}
         <div className="bg-card rounded-xl border border-border overflow-hidden">

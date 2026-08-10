@@ -62,7 +62,9 @@ export default function DossierDetail() {
   const [showAffectation, setShowAffectation] = useState(false);
   const [showTransfer, setShowTransfer] = useState(false);
   const dossier = dossiers.find((d) => d.reference === reference);
-  const { data: historyEvents = [], loading: historyLoading } = useHistorique(dossier?.id);
+  const history = useHistorique(dossier?.id);
+  const historyEvents = history.data || [];
+  const historyLoading = history.loading;
 
   const usersMap = useMemo(() => {
     const map = {};
@@ -253,7 +255,7 @@ export default function DossierDetail() {
           <Ongletdocument dossierId={dossier.id} usersMap={usersMap} />
         )}
         {activeTab === "historique" && (
-          <Onglethistorique dossierId={dossier.id} usersMap={usersMap} />
+          <Onglethistorique history={history} usersMap={usersMap} />
         )}
         {activeTab === "messagerie" && (
           <div className="flex flex-col items-center justify-center py-16 gap-3">
