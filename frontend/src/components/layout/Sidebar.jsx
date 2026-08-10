@@ -55,7 +55,7 @@ export default function Sidebar({ user }) {
           </div>
           <div>
             <div className="text-xs font-bold text-sidebar-foreground leading-tight">
-              Cabinet BHONGO-MAVOUNGOU
+              Cabinet Bhongo-Mavoungou
             </div>
             <div className="text-[10px] text-white/45 tracking-wide">
               Gestion de cabinet

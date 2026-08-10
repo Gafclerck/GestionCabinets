@@ -8,13 +8,18 @@ export const discussionService = {
     return data;
   },
 
-  getMessages: async (discussionId, skip = 0, limit = 100) => {
+  create: async ({ sujet, description = null, dossier_id = null }) => {
+    const { data } = await api.post(BASE, { sujet, description, dossier_id });
+    return data;
+  },
+
+  getMessages: async (discussionId, skip = 0, limit = 200) => {
     const { data } = await api.get(`${BASE}/${discussionId}/messages`, { params: { skip, limit } });
     return data;
   },
 
-  sendMessage: async (dossierId, contenu) => {
-    const { data } = await api.post(`${BASE}/${dossierId}/messages`, { contenu });
+  sendMessage: async (discussionId, contenu) => {
+    const { data } = await api.post(`${BASE}/${discussionId}/messages`, { contenu });
     return data;
   },
 };

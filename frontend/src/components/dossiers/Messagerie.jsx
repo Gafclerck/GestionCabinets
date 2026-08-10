@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef, useCallback } from "react";
-import { Send, MessageSquare, Loader2 } from "lucide-react";
-import { discussionService } from "../../services/discussionService";
+import { useState, useRef, useEffect } from "react";
+import { Send, MessageSquare, Loader2, RefreshCw } from "lucide-react";
+import { useDiscussion } from "../../hooks/useDiscussion";
 import { useAuth } from "../../hooks/useAuth";
 import Avatar from "../ui/Avatar";
 
@@ -33,108 +33,76 @@ function MessageBubble({ message, isMine, authorName }) {
 
 export default function Messagerie({ dossier, utilisateurs = [] }) {
   const { user } = useAuth();
-  const [messages, setMessages] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [sending, setSending] = useState(false);
   const [input, setInput] = useState("");
-  const [error, setError] = useState(null);
-  const [connected, setConnected] = useState(false);
-  const wsRef = useRef(null);
   const listRef = useRef(null);
   const inputRef = useRef(null);
 
-  const scrollToBottom = useCallback(() => {
+  const {
+    messages,
+    loading,
+    loadingMore,
+    sending,
+    connected,
+    error,
+    refetch,
+    loadMore,
+    handleSend,
+    hasMore,
+  } = useDiscussion({
+    dossierId: dossier.id,
+    sujet: `Discussion - ${dossier.reference}`,
+  });
+
+  const scrollToBottom = () => {
     if (listRef.current) {
       listRef.current.scrollTop = listRef.current.scrollHeight;
     }
-  }, []);
+  };
 
-  const loadMessages = useCallback(async () => {
-    try {
-      const discussions = await discussionService.getByDossier(dossier.id);
-      if (discussions.length === 0) {
-        setMessages([]);
-        return;
-      }
-      const msgs = await discussionService.getMessages(discussions[0].id, 0, 200);
-      setMessages(msgs);
-      setTimeout(scrollToBottom, 50);
-    } catch (err) {
-      setError(err.response?.data?.detail || "Erreur lors du chargement des messages");
-    } finally {
-      setLoading(false);
-    }
-  }, [dossier.id, scrollToBottom]);
-
+  const lastMessageId = messages[messages.length - 1]?.id;
   useEffect(() => {
-    if (!dossier?.id) return;
-    loadMessages();
+    if (lastMessageId) scrollToBottom();
+  }, [lastMessageId]);
 
-    const token = localStorage.getItem("access_token");
-    const baseUrl = (import.meta.env.VITE_API_URL || "http://localhost:8000").replace(/^http/, "ws");
-    const ws = new WebSocket(`${baseUrl}/api/ws/dossier/${dossier.id}?token=${encodeURIComponent(token || "")}`);
-
-    wsRef.current = ws;
-
-    ws.onopen = () => setConnected(true);
-    ws.onclose = () => setConnected(false);
-    ws.onerror = () => setConnected(false);
-
-    ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.type === "message") {
-          setMessages((prev) => [...prev, data]);
-          setTimeout(scrollToBottom, 50);
-        }
-      } catch {
-        /* ignore */
-      }
-    };
-
-    return () => {
-      ws.close();
-      wsRef.current = null;
-    };
-  }, [dossier?.id, loadMessages, scrollToBottom]);
-
-  async function handleSend(e) {
+  async function onSubmit(e) {
     e.preventDefault();
-    const contenu = input.trim();
-    if (!contenu || sending) return;
-
-    setSending(true);
-    setError(null);
-    try {
-      const wsReady = wsRef.current && wsRef.current.readyState === WebSocket.OPEN;
-      if (wsReady) {
-        wsRef.current.send(JSON.stringify({ contenu }));
-      } else {
-        const msg = await discussionService.sendMessage(dossier.id, contenu);
-        setMessages((prev) => [...prev, msg]);
-        setTimeout(scrollToBottom, 50);
-      }
-      setInput("");
-      inputRef.current?.focus();
-    } catch (err) {
-      setError(err.response?.data?.detail || "Erreur lors de l'envoi du message");
-    } finally {
-      setSending(false);
-    }
+    if (!input.trim() || sending) return;
+    const ok = await handleSend(input);
+    if (ok) setInput("");
+    inputRef.current?.focus();
   }
 
   return (
-    <div className="flex flex-col h-full max-w-[900px] mx-auto">
+    <div className="flex flex-col h-full w-full mx-auto lg:w-[80%] lg:max-w-7xl">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2 text-[13px] text-muted-foreground">
           <span className="inline-flex items-center gap-1.5">
             <span className={`w-2 h-2 rounded-full ${connected ? "bg-success" : "bg-muted-foreground/50"}`} />
             {connected ? "Connecté" : "Hors ligne"}
           </span>
+          <button
+            type="button"
+            onClick={refetch}
+            className="inline-flex items-center gap-1 hover:text-foreground transition-colors"
+            title="Recharger la conversation"
+          >
+            <RefreshCw size={13} />
+          </button>
         </div>
       </div>
 
       <div ref={listRef} className="flex-1 overflow-y-auto flex flex-col gap-3 pr-2 min-h-0">
+        {hasMore && (
+          <button
+            type="button"
+            onClick={loadMore}
+            disabled={loadingMore}
+            className="self-center mt-1 px-3 py-1.5 text-xs text-muted-foreground border border-border rounded-full hover:bg-secondary transition-colors"
+          >
+            {loadingMore ? "Chargement..." : "Charger les messages précédents"}
+          </button>
+        )}
+
         {loading ? (
           <div className="flex items-center justify-center py-16 gap-2 text-muted-foreground">
             <Loader2 size={16} className="animate-spin" />Chargement des messages...
@@ -165,7 +133,7 @@ export default function Messagerie({ dossier, utilisateurs = [] }) {
         </div>
       )}
 
-      <form onSubmit={handleSend} className="flex items-end gap-2 mt-3">
+      <form onSubmit={onSubmit} className="flex items-end gap-2 mt-3">
         <textarea
           ref={inputRef}
           value={input}
@@ -173,7 +141,7 @@ export default function Messagerie({ dossier, utilisateurs = [] }) {
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault();
-              handleSend(e);
+              onSubmit(e);
             }
           }}
           rows={2}

@@ -7,7 +7,7 @@ from app.services.document_service import (
     upload_document,
     list_documents,
     get_document,
-    get_file_path,
+    get_file_for_download,
     delete_document,
 )
 
@@ -24,7 +24,9 @@ async def upload(
 ):
     if fichier.content_type not in ALLOWED_MIME_TYPES:
         raise HTTPException(400, "Type de fichier non supporte")
-    content = await fichier.read()
+    # On lit au maximum MAX_FILE_SIZE + 1 octets : un fichier plus gros est
+    # refuse sans jamais charger l'integralite en memoire.
+    content = await fichier.read(MAX_FILE_SIZE + 1)
     if len(content) > MAX_FILE_SIZE:
         raise HTTPException(413, "Fichier trop volumineux (max 10 Mo)")
     return upload_document(dossier_id, fichier.filename, fichier.content_type, content, description, confidentiel, current_user, db)
@@ -42,8 +44,8 @@ def get_one(doc_id: int, db: SessionDep, current_user: CurrentUser):
 
 @router.get("/{doc_id}/fichier")
 def download(doc_id: int, db: SessionDep, current_user: CurrentUser):
-    file_path = get_file_path(doc_id, current_user, db)
-    return FileResponse(path=file_path)
+    file_path, nom_fichier = get_file_for_download(doc_id, current_user, db)
+    return FileResponse(path=file_path, filename=nom_fichier)
 
 
 @router.delete("/{doc_id}", status_code=204)

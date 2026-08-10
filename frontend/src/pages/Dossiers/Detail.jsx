@@ -1,14 +1,17 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useParams, useNavigate, Navigate } from "react-router-dom";
 import {
   ArrowLeft, ChevronRight, User, Home, FileText,
-  CheckCircle, Clock, Repeat,
+  CheckCircle, Repeat
 } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 import { useDossiers } from "../../hooks/useDossiers";
 import { useAgences } from "../../hooks/useAgences";
 import { useUsers } from "../../hooks/useUsers";
+import { useHistorique } from "../../hooks/useHistorique";
 import { ROLE_LABELS } from "../../lib/constants";
+import { getInitials } from "../../lib/utils";
+import { getActionConfig, getAuteurInfo, getTempsRelatif } from "../../lib/historique";
 import StatusBadge from "../../components/ui/StatusBadge";
 import PrioriteStars from "../../components/ui/PrioriteStars";
 import Avatar from "../../components/ui/Avatar";
@@ -17,6 +20,8 @@ import AffectationModal from "../../components/dossiers/AffectationModal";
 import TransferModal from "../../components/dossiers/TransferModal";
 import Messagerie from "../../components/dossiers/Messagerie";
 
+import Onglethistorique from "../../components/dossiers/Onglethistorique";
+import Ongletdocument from "../../components/dossiers/Ongletdocument";
 function Tab({ label, active, onClick }) {
   return (
     <button onClick={onClick}
@@ -80,23 +85,29 @@ function DetailSkeleton() {
   );
 }
 
-const DEMO_TIMELINE = [
-  { id: "t1", label: "Dossier créé et enregistré", actor: "Mariama Diallo", date: "il y a 3 jours", color: "bg-primary" },
-  { id: "t2", label: "Analyse IA déclenchée", actor: "Système automatique", date: "il y a 3 jours", color: "bg-accent" },
-  { id: "t3", label: "Dossier affecté à Me Aïssatou Ba", actor: "Moussa Sow", date: "il y a 2 jours", color: "bg-success" },
-];
-
 export default function DossierDetail() {
   const { reference } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { data: dossiers = [], loading } = useDossiers();
+  const { data: dossiers = [], loading, refetch: refetchDossiers } = useDossiers();
   const { data: agences = [] } = useAgences();
   const { data: utilisateurs = [] } = useUsers();
   const [activeTab, setActiveTab] = useState("apercu");
   const [showAffectation, setShowAffectation] = useState(false);
   const [showTransfer, setShowTransfer] = useState(false);
   const dossier = dossiers.find((d) => d.reference === reference);
+  const history = useHistorique(dossier?.id);
+  const historyEvents = history.data || [];
+  const historyLoading = history.loading;
+
+  const usersMap = useMemo(() => {
+    const map = {};
+    for (const u of utilisateurs) {
+      const nom = `${u.prenom} ${u.nom}`;
+      map[u.id] = { nom, initiales: getInitials(nom) };
+    }
+    return map;
+  }, [utilisateurs]);
 
   if (!user) return <Navigate to="/login" replace />;
   if (loading) return <DetailSkeleton />;
@@ -185,21 +196,34 @@ export default function DossierDetail() {
                   </div>
                 </div>
               </SectionCard>
-              <SectionCard title="Dernières actions" action={<button className="text-xs text-primary font-medium flex items-center gap-1">Voir tout <ChevronRight size={13} /></button>}>
+              <SectionCard title="Dernières actions" action={<button onClick={() => setActiveTab("historique")} className="text-xs text-primary font-medium flex items-center gap-1">Voir tout <ChevronRight size={13} /></button>}>
                 <div className="flex flex-col">
-                  {DEMO_TIMELINE.map((event, idx) => (
-                    <div key={event.id} className={`flex gap-3 ${idx > 0 ? "pt-4" : ""}`}>
-                      <div className="flex flex-col items-center shrink-0">
-                        <div className={`w-7 h-7 rounded-full ${event.color} flex items-center justify-center text-primary-foreground text-[10px] shrink-0 z-10`}>{idx + 1}</div>
-                        {idx < DEMO_TIMELINE.length - 1 && <div className="w-[1.5px] flex-1 min-h-4 bg-border mt-1" />}
-                      </div>
-                      <div className="flex-1 pb-0">
-                        <p className="text-[13px] font-medium text-foreground mb-0.5 leading-snug">{event.label}</p>
-                        <p className="text-[11px] text-muted-foreground mb-0">{event.actor}</p>
-                        <span className="text-[11px] text-muted-foreground border-b border-dashed border-border">{event.date}</span>
-                      </div>
-                    </div>
-                  ))}
+                  {historyLoading ? (
+                    <p className="text-[13px] text-muted-foreground py-3">Chargement...</p>
+                  ) : historyEvents.length === 0 ? (
+                    <p className="text-[13px] text-muted-foreground py-3">Aucune action enregistrée pour ce dossier.</p>
+                  ) : (
+                    historyEvents.slice(0, 3).map((event, idx) => {
+                      const config = getActionConfig(event.action);
+                      const IconComponent = config.icon;
+                      const auteur = getAuteurInfo(event.user_id, usersMap);
+                      return (
+                        <div key={event.id} className={`flex gap-3 ${idx > 0 ? "pt-4" : ""}`}>
+                          <div className="flex flex-col items-center shrink-0">
+                            <div className={`w-7 h-7 rounded-full ${config.iconBg} flex items-center justify-center shrink-0 z-10`}>
+                              <IconComponent className="w-3.5 h-3.5" />
+                            </div>
+                            {idx < Math.min(historyEvents.length, 3) - 1 && <div className="w-[1.5px] flex-1 min-h-4 bg-border mt-1" />}
+                          </div>
+                          <div className="flex-1 pb-0">
+                            <p className="text-[13px] font-medium text-foreground mb-0.5 leading-snug">{config.label}</p>
+                            <p className="text-[11px] text-muted-foreground mb-0">{auteur.nom}</p>
+                            <span className="text-[11px] text-muted-foreground border-b border-dashed border-border">{getTempsRelatif(event.created_at)}</span>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
                 </div>
               </SectionCard>
             </div>
@@ -258,16 +282,10 @@ export default function DossierDetail() {
           </div>
         )}
         {activeTab === "documents" && (
-          <div className="flex flex-col items-center justify-center py-16 gap-3">
-            <div className="w-14 h-14 rounded-3xl bg-secondary flex items-center justify-center text-muted-foreground"><FileText size={24} /></div>
-            <p className="text-sm font-medium text-muted-foreground">Documents — disponible prochainement</p>
-          </div>
+          <Ongletdocument dossierId={dossier.id} usersMap={usersMap} />
         )}
         {activeTab === "historique" && (
-          <div className="flex flex-col items-center justify-center py-16 gap-3">
-            <div className="w-14 h-14 rounded-3xl bg-secondary flex items-center justify-center text-muted-foreground"><Clock size={24} /></div>
-            <p className="text-sm font-medium text-muted-foreground">Historique — disponible prochainement</p>
-          </div>
+          <Onglethistorique history={history} usersMap={usersMap} />
         )}
         {activeTab === "messagerie" && (
           <div className="h-full flex flex-col min-h-0">
@@ -283,6 +301,7 @@ export default function DossierDetail() {
         onClose={() => setShowAffectation(false)}
         onConfirm={() => {
           setShowAffectation(false);
+          refetchDossiers();
         }}
         initialAgenceId={dossier.analyse_ia?.agence_suggeree_id}
         initialAvocatId={dossier.analyse_ia?.avocat_suggere_id}
@@ -295,6 +314,7 @@ export default function DossierDetail() {
         onClose={() => setShowTransfer(false)}
         onConfirm={() => {
           setShowTransfer(false);
+          refetchDossiers();
         }}
       />
     </div>

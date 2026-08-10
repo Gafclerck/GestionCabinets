@@ -65,7 +65,7 @@ export default function Login() {
             <Scale size={32} className="text-white" />
           </div>
           <h1 className="text-3xl font-bold text-white mb-3">
-            Cabinet BHONGO-MAVOUNGOU
+            Cabinet Bhongo-Mavoungou
           </h1>
           <p className="text-base text-white/70 mb-10 leading-relaxed">
             Plateforme de gestion intelligente des dossiers juridiques
@@ -96,7 +96,7 @@ export default function Login() {
             <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center">
               <Scale size={18} className="text-primary-foreground" />
             </div>
-            <span className="text-sm font-bold text-foreground">Cabinet BHONGO</span>
+            <span className="text-sm font-bold text-foreground">Cabinet Bhongo</span>
           </div>
 
           <h2 className="text-2xl font-bold text-foreground mb-1">Bienvenue</h2>
