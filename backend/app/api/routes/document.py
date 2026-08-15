@@ -1,5 +1,7 @@
+from urllib.parse import quote
+
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import StreamingResponse
 
 from app.core.deps import SessionDep, CurrentUser
 from app.core.storage import MAX_FILE_SIZE, ALLOWED_MIME_TYPES
@@ -7,7 +9,7 @@ from app.services.document_service import (
     upload_document,
     list_documents,
     get_document,
-    get_file_for_download,
+    get_file_stream,
     delete_document,
 )
 
@@ -44,8 +46,9 @@ def get_one(doc_id: int, db: SessionDep, current_user: CurrentUser):
 
 @router.get("/{doc_id}/fichier")
 def download(doc_id: int, db: SessionDep, current_user: CurrentUser):
-    file_path, nom_fichier = get_file_for_download(doc_id, current_user, db)
-    return FileResponse(path=file_path, filename=nom_fichier)
+    chunks, nom_fichier, type_mime = get_file_stream(doc_id, current_user, db)
+    headers = {"Content-Disposition": f"attachment; filename*=UTF-8''{quote(nom_fichier)}"}
+    return StreamingResponse(chunks, media_type=type_mime or "application/octet-stream", headers=headers)
 
 
 @router.delete("/{doc_id}", status_code=204)

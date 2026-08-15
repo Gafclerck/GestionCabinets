@@ -1,21 +1,23 @@
 import uuid
 from pathlib import Path
-from fastapi import HTTPException, status
+from typing import Iterator
+from fastapi import HTTPException, status, UploadFile, File
 from sqlalchemy.orm import Session
 from sqlalchemy import func
+from botocore.exceptions import ClientError
 
+from app.core.storage import s3_client, OBJECT_KEY_PREFIX
 from app.models.Document import Document
 from app.models.User import User
 from app.models.HistoriqueAction import HistoriqueAction
 from app.schemas.document import DocumentRead
-from app.core.storage import UPLOAD_DIR
+from app.core.config import settings
 from app.services.access import (
     get_dossier_or_404,
     verify_dossier_access,
     verify_document_access,
     can_see_confidential,
 )
-
 
 def _to_read(doc: Document) -> DocumentRead:
     return DocumentRead(
@@ -44,18 +46,23 @@ def upload_document(dossier_id: int, nom_fichier: str, content_type: str | None,
     verify_dossier_access(dossier, user)
 
     unique_name = f"{uuid.uuid4()}{Path(nom_fichier).suffix if nom_fichier else ''}"
-    dossier_dir = UPLOAD_DIR / str(dossier_id)
-    dossier_dir.mkdir(parents=True, exist_ok=True)
-    file_path = dossier_dir / unique_name
+    object_key = f"{OBJECT_KEY_PREFIX}/{dossier_id}/{unique_name}"
 
-    with open(file_path, "wb") as f:
-        f.write(content)
+    try:
+        s3_client.put_object(
+            Bucket=settings.S3_BUCKET_NAME,
+            Key=object_key,
+            Body=content,
+            ContentType=content_type,
+        )
+    except ClientError as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
     document = Document(
         dossier_id=dossier_id,
         uploaded_by_id=user.id,
         nom_fichier=nom_fichier or "unnamed",
-        chemin_stockage=str(file_path),
+        chemin_stockage=object_key,
         type_mime=content_type,
         taille_octets=len(content),
         description=description,
@@ -95,14 +102,26 @@ def get_document(doc_id: int, user: User, db: Session) -> DocumentRead:
     return _to_read(document)
 
 
-def get_file_for_download(doc_id: int, user: User, db: Session) -> tuple[Path, str]:
+def get_file_stream(doc_id: int, user: User, db: Session) -> tuple[Iterator[bytes], str, str | None]:
     document = get_document_or_404(doc_id, db)
     dossier = get_dossier_or_404(document.dossier_id, db)
     verify_document_access(document, dossier, user)
-    file_path = Path(document.chemin_stockage)
-    if not file_path.exists():
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Fichier physique non trouve")
-    return file_path, document.nom_fichier
+    try:
+        response = s3_client.get_object(Bucket=settings.S3_BUCKET_NAME, Key=document.chemin_stockage)
+    except ClientError as e:
+        code = e.response.get("Error", {}).get("Code", "")
+        if code in ("NoSuchKey", "404"):
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Fichier physique non trouve")
+        raise HTTPException(status_code=500, detail="Erreur de lecture du fichier")
+    body = response["Body"]
+
+    def _iter() -> Iterator[bytes]:
+        try:
+            yield from body.iter_chunks()
+        finally:
+            body.close()
+
+    return _iter(), document.nom_fichier, document.type_mime
 
 
 # Soft delete : on garde le fichier et la ligne, on date la suppression.
