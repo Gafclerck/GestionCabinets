@@ -98,3 +98,13 @@ def get_user_from_token(db: Session, token: str) -> User | None:
         return None
     user = db.query(User).filter(User.email == username).first()
     return user
+
+
+def change_password(db: Session, user: User, ancien_mot_de_passe: str, nouveau_mot_de_passe: str) -> None:
+    if not verify_password(ancien_mot_de_passe, user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="L'ancien mot de passe est incorrect",
+        )
+    user.password_hash = hash_password(nouveau_mot_de_passe)
+    db.commit()
