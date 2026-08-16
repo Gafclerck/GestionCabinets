@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Folder, TrendingUp, Clock, CheckCircle, Repeat,
   List, Plus, ArrowRight, Users, Home, MessageSquare,
@@ -470,8 +470,15 @@ function AvocatDashboard({ user }) {
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
   if (!user) return null;
   if (user.role === "chef_agence") return <AvocatEnChefDashboard user={user} />;
   if (user.role === "avocat") return <AvocatDashboard user={user} />;
+  // Le chef central peut restreindre sa vue a sa propre agence (dropdown de la
+  // topbar, ?agence=<id>) : on reutilise la vue chef d'agence, qui filtre deja
+  // par user.agence_id (son agence siege). Absent/"all" = vue globale.
+  if (String(searchParams.get("agence")) === String(user.agence_id)) {
+    return <AvocatEnChefDashboard user={user} />;
+  }
   return <GerantCentralDashboard user={user} />;
 }

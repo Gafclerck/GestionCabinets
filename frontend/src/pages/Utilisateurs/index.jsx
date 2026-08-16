@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Search, X, Plus, Grid, List, Mail, Building2 } from "lucide-react";
 import { useUsers } from "../../hooks/useUsers";
 import { useAgences } from "../../hooks/useAgences";
+import { useSearchQuery } from "../../hooks/useSearchQuery";
 import { ROLE_LABELS } from "../../lib/constants";
 
 import Card, { CardContent } from "../../components/ui/Card";
@@ -25,7 +26,7 @@ export default function Utilisateurs() {
   const navigate = useNavigate();
   const { data: users = [], refetch } = useUsers();
   const { data: agences = [] } = useAgences();
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useSearchQuery();
   const [filterRole, setFilterRole] = useState("all");
   const [filterAgence, setFilterAgence] = useState("all");
   const [viewMode, setViewMode] = useState("grid");

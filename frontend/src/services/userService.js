@@ -17,4 +17,9 @@ export const userService = {
     const { data } = await api.patch(`${BASE}/${id}`, payload);
     return data;
   },
+
+  updateMe: async (payload) => {
+    const { data } = await api.patch(`${BASE}/me`, payload);
+    return data;
+  },
 };

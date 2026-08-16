@@ -7,6 +7,7 @@ import {
 import { useDossiers } from "../../hooks/useDossiers";
 import { useAgences } from "../../hooks/useAgences";
 import { useUsers } from "../../hooks/useUsers";
+import { useSearchQuery } from "../../hooks/useSearchQuery";
 import { STATUT_LABELS } from "../../lib/constants";
 import StatusBadge from "../../components/ui/StatusBadge";
 import PrioriteStars from "../../components/ui/PrioriteStars";
@@ -66,7 +67,7 @@ export default function DossiersList() {
   const { data: dossiers = [], loading } = useDossiers();
   const { data: agences = [] } = useAgences();
   const { data: utilisateurs = [] } = useUsers();
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useSearchQuery();
   const [filterStatut, setFilterStatut] = useState("");
   const [filterAgence, setFilterAgence] = useState("");
   const [filterAvocat, setFilterAvocat] = useState("");
