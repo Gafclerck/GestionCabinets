@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Bell, Search, ChevronDown, Settings, LogOut, X, Building2 } from "lucide-react";
+import { Bell, Search, ChevronDown, Settings, LogOut, X, Building2, Plus } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 import { useSearchQuery } from "../../hooks/useSearchQuery";
 import { useUrlParam } from "../../hooks/useUrlParam";
@@ -37,7 +37,7 @@ function getPageTitle(pathname) {
   return ROUTE_TITLES[root] || "Tableau de bord";
 }
 
-export default function Topbar() {
+export default function Topbar({ onNewDossier }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -75,7 +75,7 @@ export default function Topbar() {
           <DropdownMenu>
             <DropdownMenuTrigger className="flex items-center gap-2 text-[13px] font-medium text-foreground bg-secondary rounded-md px-3 py-1.5 hover:opacity-85 transition-opacity cursor-pointer outline-none">
               <Building2 size={14} className="text-muted-foreground" />
-              <span>{vueMonAgence ? `Mon agence${monAgence ? ` — ${monAgence.nom}` : ""}` : "Toutes les agences"}</span>
+              <span>{vueMonAgence ? `Mon agence${monAgence ? ` - ${monAgence.nom}` : ""}` : "Toutes les agences"}</span>
               <ChevronDown size={13} className="text-muted-foreground" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-[220px]">
@@ -126,6 +126,16 @@ export default function Topbar() {
       </div>
 
       <div className="flex items-center gap-2 ml-auto">
+        {onNewDossier && (
+          <button
+            onClick={onNewDossier}
+            className="flex items-center gap-1.5 bg-primary text-primary-foreground rounded-md px-3 py-2 text-xs font-semibold hover:opacity-90 transition-opacity"
+          >
+            <Plus size={14} />
+            Nouveau dossier
+          </button>
+        )}
+
         <button
           className="relative text-muted-foreground w-[44px] h-[44px] flex items-center justify-center rounded-md hover:bg-secondary"
           aria-label="Notifications"

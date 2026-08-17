@@ -3,6 +3,7 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from app.models.Client import Client
+from app.models.Dossier import Dossier
 from app.schemas.client import ClientCreate, ClientUpdate, ClientRead
 
 
@@ -54,3 +55,22 @@ def update_client(client_id: int, data: ClientUpdate, db: Session) -> ClientRead
     db.commit()
     db.refresh(client)
     return client
+
+
+# Suppression conditionnelle : un client lie a des dossiers ne peut pas etre
+# supprime (integrite des references). On refuse plutot que de casser les FK.
+def delete_client(client_id: int, db: Session) -> None:
+    client = db.query(Client).filter(Client.id == client_id).first()
+    if not client:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Client not found",
+        )
+    dossiers_lies = db.query(Dossier).filter(Dossier.client_id == client_id).count()
+    if dossiers_lies > 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Impossible de supprimer ce client : {dossiers_lies} dossier(s) lui sont associes",
+        )
+    db.delete(client)
+    db.commit()

@@ -36,6 +36,15 @@ export const STATUT_STYLES = {
   archive:                  { bg: "bg-status-archive-bg",   text: "text-status-archive-text" },
 };
 
+// Ordre d'affichage privilegie des dossiers: en cours d'abord, puis en attente, puis termines.
+export const STATUT_ORDRE = {
+  en_cours: 1,
+  en_attente: 2,
+  en_attente_affectation: 2,
+  termine: 3,
+  archive: 4,
+};
+
 export const STATUTS_ACTIFS = [
   "en_attente", "en_attente_affectation", "en_cours",
 ];

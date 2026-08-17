@@ -3,6 +3,11 @@ import api from "./api";
 const BASE = "/api/user";
 
 export const userService = {
+  create: async (payload) => {
+    const { data } = await api.post("/api/auth/chef_central/register", payload);
+    return data;
+  },
+
   getAll: async (skip = 0, limit = 100) => {
     const { data } = await api.get(`${BASE}/all`, { params: { skip, limit } });
     return data;

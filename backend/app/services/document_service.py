@@ -141,3 +141,29 @@ def delete_document(doc_id: int, user: User, db: Session) -> None:
     )
     db.add(histo)
     db.commit()
+
+
+# Modification des metadonnees (description, confidentialite) sans toucher au
+# fichier stocke. Permet de completer la description d'un document deja uploade.
+def update_document(doc_id: int, data, user: User, db: Session) -> DocumentRead:
+    document = get_document_or_404(doc_id, db)
+    dossier = get_dossier_or_404(document.dossier_id, db)
+    verify_document_access(document, dossier, user)
+
+    ancienne = {"description": document.description, "confidentiel": document.confidentiel}
+    if data.description is not None:
+        document.description = data.description
+    if data.confidentiel is not None:
+        document.confidentiel = data.confidentiel
+
+    histo = HistoriqueAction(
+        dossier_id=document.dossier_id,
+        user_id=user.id,
+        action="modification_document",
+        ancienne_valeur=ancienne,
+        nouvelle_valeur={"description": document.description, "confidentiel": document.confidentiel},
+    )
+    db.add(histo)
+    db.commit()
+    db.refresh(document)
+    return _to_read(document)

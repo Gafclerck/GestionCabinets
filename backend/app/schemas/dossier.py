@@ -23,6 +23,18 @@ class DossierAffectation(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class DossierUpdateRequest(BaseModel):
+    # Edition generique du dossier : champs optionnels, non fourni = non modifie.
+    # Le statut et l'affectation passent par leurs endpoints dedies (/statut, /affecter).
+    titre: Optional[str] = Field(None, min_length=1, max_length=255)
+    description_initiale: Optional[str] = None
+    priorite: Optional[int] = Field(None, ge=1, le=5)
+    type_affaire_id: Optional[int] = None
+    client_id: Optional[int] = None
+
+    model_config = {"from_attributes": True}
+
+
 class DossierStatutUpdate(BaseModel):
     statut: StatutDossier
 

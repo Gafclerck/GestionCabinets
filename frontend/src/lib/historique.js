@@ -2,7 +2,7 @@ import { PlusCircle, Repeat, UserCheck, FileUp, Trash2, MessageSquare, FileText,
 import { STATUT_LABELS } from "./constants";
 
 export function formatStatut(value) {
-  if (value === null || value === undefined) return "—";
+  if (value === null || value === undefined) return "-";
   return STATUT_LABELS[value] || value.replaceAll("_", " ");
 }
 
@@ -235,8 +235,8 @@ export function getContenu(event) {
     if (cleChangee) {
       return {
         changement: {
-          avant: String(ancienne_valeur[cleChangee] ?? "—"),
-          apres: String(nouvelle_valeur[cleChangee] ?? "—"),
+          avant: String(ancienne_valeur[cleChangee] ?? "-"),
+          apres: String(nouvelle_valeur[cleChangee] ?? "-"),
         },
       };
     }

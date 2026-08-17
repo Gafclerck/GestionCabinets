@@ -252,7 +252,7 @@ export default function Ongletdocument({ dossierId, usersMap }) {
               className="hidden"
             />
             <p className="text-xs text-muted-foreground mb-3">
-              PDF, DOCX, XLSX, images — taille maximale {MAX_FILE_SIZE_MB} Mo
+              PDF, DOCX, XLSX, images - taille maximale {MAX_FILE_SIZE_MB} Mo
             </p>
             <button
               type="button"

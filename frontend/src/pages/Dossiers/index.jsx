@@ -8,7 +8,7 @@ import { useDossiers } from "../../hooks/useDossiers";
 import { useAgences } from "../../hooks/useAgences";
 import { useUsers } from "../../hooks/useUsers";
 import { useSearchQuery } from "../../hooks/useSearchQuery";
-import { STATUT_LABELS } from "../../lib/constants";
+import { STATUT_LABELS, STATUT_ORDRE } from "../../lib/constants";
 import StatusBadge from "../../components/ui/StatusBadge";
 import PrioriteStars from "../../components/ui/PrioriteStars";
 
@@ -72,8 +72,8 @@ export default function DossiersList() {
   const [filterAgence, setFilterAgence] = useState("");
   const [filterAvocat, setFilterAvocat] = useState("");
   const [filterPriorite, setFilterPriorite] = useState("");
-  const [sortCol, setSortCol] = useState("reference");
-  const [sortDir, setSortDir] = useState("desc");
+  const [sortCol, setSortCol] = useState("statut");
+  const [sortDir, setSortDir] = useState("asc");
   const [page, setPage] = useState(1);
 
   function handleSort(col) {
@@ -88,7 +88,7 @@ export default function DossiersList() {
   }
 
   const filtered = useMemo(() => {
-    let data = [...dossiers];
+    let data = dossiers.filter((d) => d.statut !== "archive");
     if (search) {
       const q = search.toLowerCase();
       data = data.filter((d) =>
@@ -111,7 +111,9 @@ export default function DossiersList() {
         case "type_affaire": va = a.type_affaire_libelle ?? ""; vb = b.type_affaire_libelle ?? ""; break;
         case "agence":       va = a.agence_assigne_nom ?? a.agence_receptrice_nom ?? ""; vb = b.agence_assigne_nom ?? b.agence_receptrice_nom ?? ""; break;
         case "avocat":       va = a.avocat_assigne_nom ?? ""; vb = b.avocat_assigne_nom ?? ""; break;
-        case "statut":       va = a.statut;       vb = b.statut;       break;
+        case "statut":       return sortDir === "asc"
+          ? (STATUT_ORDRE[a.statut] ?? 99) - (STATUT_ORDRE[b.statut] ?? 99)
+          : (STATUT_ORDRE[b.statut] ?? 99) - (STATUT_ORDRE[a.statut] ?? 99);
         case "priorite":     return sortDir === "asc" ? a.priorite - b.priorite : b.priorite - a.priorite;
         case "ia":           va = "0"; vb = "0"; break;
       }
@@ -159,13 +161,13 @@ export default function DossiersList() {
           <div className="w-px h-6 bg-border mx-1" />
 
           <FilterSelect label="Statut" value={filterStatut} onChange={(v) => { setFilterStatut(v); setPage(1); }}
-            options={Object.entries(STATUT_LABELS).map(([k, v]) => ({ value: k, label: v }))} />
+            options={Object.entries(STATUT_LABELS).filter(([k]) => k !== "archive").map(([k, v]) => ({ value: k, label: v }))} />
           <FilterSelect label="Agence" value={filterAgence} onChange={(v) => { setFilterAgence(v); setPage(1); }}
             options={agences.map((a) => ({ value: a.id, label: a.nom }))} />
           <FilterSelect label="Avocat" value={filterAvocat} onChange={(v) => { setFilterAvocat(v); setPage(1); }}
             options={avocats.map((u) => ({ value: u.id, label: u.nom }))} />
           <FilterSelect label="Priorité" value={filterPriorite} onChange={(v) => { setFilterPriorite(v); setPage(1); }}
-            options={[1, 2, 3, 4, 5].map((n) => ({ value: String(n), label: `${n} — ${PRIORITE_LABELS[n]}` }))} />
+            options={[1, 2, 3, 4, 5].map((n) => ({ value: String(n), label: `${n} - ${PRIORITE_LABELS[n]}` }))} />
 
           {hasFilters && (
             <>
@@ -180,7 +182,7 @@ export default function DossiersList() {
             {filterStatut   && <FilterChip label={STATUT_LABELS[filterStatut]} onRemove={() => setFilterStatut("")} />}
             {filterAgence   && <FilterChip label={agences.find((a) => a.id === Number(filterAgence))?.nom ?? ""} onRemove={() => setFilterAgence("")} />}
             {filterAvocat   && <FilterChip label={utilisateurs.find((u) => u.id === Number(filterAvocat))?.nom ?? ""} onRemove={() => setFilterAvocat("")} />}
-            {filterPriorite && <FilterChip label={`P${filterPriorite} — ${PRIORITE_LABELS[Number(filterPriorite)]}`} onRemove={() => setFilterPriorite("")} />}
+            {filterPriorite && <FilterChip label={`P${filterPriorite} - ${PRIORITE_LABELS[Number(filterPriorite)]}`} onRemove={() => setFilterPriorite("")} />}
           </div>
         </div>
       </div>
@@ -212,16 +214,16 @@ export default function DossiersList() {
                     ${isEven ? "bg-card" : "bg-background"}`}>
                   <td className="px-4 py-3 text-xs font-semibold text-primary tabular-nums">{d.reference}</td>
                   <td className="px-4 py-3 text-[13px] text-foreground line-clamp-2 leading-snug">{d.titre}</td>
-                  <td className="px-4 py-3 text-[13px] text-foreground truncate">{d.client_nom ?? "—"}</td>
+                  <td className="px-4 py-3 text-[13px] text-foreground truncate">{d.client_nom ?? "-"}</td>
                   <td className="px-4 py-3 text-xs text-muted-foreground truncate">{d.type_affaire_libelle}</td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground truncate">{d.agence_assigne_nom ?? d.agence_receptrice_nom ?? "—"}</td>
+                  <td className="px-4 py-3 text-xs text-muted-foreground truncate">{d.agence_assigne_nom ?? d.agence_receptrice_nom ?? "-"}</td>
                   <td className="px-4 py-3 text-xs truncate">
                     {d.avocat_assigne_nom ? <span className="text-foreground">{d.avocat_assigne_nom}</span> : <span className="text-border">Non affecté</span>}
                   </td>
                   <td className="px-4 py-3"><StatusBadge statut={d.statut} /></td>
                   <td className="px-4 py-3"><PrioriteStars priorite={d.priorite} /></td>
                   <td className="px-4 py-3">
-                    <span className="text-muted-foreground text-[11px]">—</span>
+                    <span className="text-muted-foreground text-[11px]">-</span>
                   </td>
                 </tr>
               );
@@ -237,7 +239,7 @@ export default function DossiersList() {
       {filtered.length > 0 && (
         <div className="flex items-center justify-between px-8 py-3 shrink-0">
           <span className="text-xs text-muted-foreground">
-            {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} sur {filtered.length}
+            {(page - 1) * PAGE_SIZE + 1}-{Math.min(page * PAGE_SIZE, filtered.length)} sur {filtered.length}
           </span>
           <div className="flex items-center gap-1">
             <PBtn onClick={() => setPage(1)} disabled={page === 1} label="«" />

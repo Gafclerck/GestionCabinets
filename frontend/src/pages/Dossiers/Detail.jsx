@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { useParams, useNavigate, Navigate } from "react-router-dom";
 import {
   ArrowLeft, ChevronRight, User, Home, FileText,
-  CheckCircle, Repeat
+  CheckCircle, Repeat, Pencil, CheckCheck, Archive
 } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 import { useDossiers } from "../../hooks/useDossiers";
@@ -18,6 +18,8 @@ import Avatar from "../../components/ui/Avatar";
 import Skeleton from "../../components/ui/Skeleton";
 import AffectationModal from "../../components/dossiers/AffectationModal";
 import TransferModal from "../../components/dossiers/TransferModal";
+import ModifierDossierModal from "../../components/dossiers/ModifierDossierModal";
+import { dossierService } from "../../services/dossierService";
 import Messagerie from "../../components/dossiers/Messagerie";
 
 import Onglethistorique from "../../components/dossiers/Onglethistorique";
@@ -95,6 +97,7 @@ export default function DossierDetail() {
   const [activeTab, setActiveTab] = useState("apercu");
   const [showAffectation, setShowAffectation] = useState(false);
   const [showTransfer, setShowTransfer] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
   const dossier = dossiers.find((d) => d.reference === reference);
   const history = useHistorique(dossier?.id);
   const historyEvents = history.data || [];
@@ -116,6 +119,29 @@ export default function DossierDetail() {
   const agence = agences.find((a) => a.id === (dossier?.agence_assigne_id || dossier?.agence_receptrice_id));
   const avocat = utilisateurs.find((u) => u.id === dossier?.avocat_assigne_id);
 
+  // Cloture et archivage reserves aux chefs (backend RequireChef sur /statut).
+  const isChef = user.role === "chef_central" || user.role === "chef_agence";
+
+  const handleCloturer = async () => {
+    if (!window.confirm(`Cloturer le dossier "${dossier.titre}" ?`)) return;
+    try {
+      await dossierService.updateStatut(dossier.id, { statut: "termine" });
+      refetchDossiers();
+    } catch (err) {
+      window.alert(err.response?.data?.detail || "Erreur lors de la cloture du dossier.");
+    }
+  };
+
+  const handleArchiver = async () => {
+    if (!window.confirm(`Archiver le dossier "${dossier.titre}" ?`)) return;
+    try {
+      await dossierService.updateStatut(dossier.id, { statut: "archive" });
+      refetchDossiers();
+    } catch (err) {
+      window.alert(err.response?.data?.detail || "Erreur lors de l'archivage du dossier.");
+    }
+  };
+
   return (
     <div className="flex flex-col h-full overflow-hidden bg-background">
       <div className="bg-card border-b border-border shrink-0">
@@ -136,12 +162,36 @@ export default function DossierDetail() {
             <h1 className="text-xl font-bold text-foreground mb-1.5">{dossier.titre}</h1>
             <div className="flex items-center gap-4 flex-wrap text-[13px] text-muted-foreground">
               <span className="inline-flex items-center gap-1">
-                <User size={12} />{dossier.client_nom ?? "—"}
+                <User size={12} />{dossier.client_nom ?? "-"}
               </span>
               <span className="inline-flex items-center gap-1"><FileText size={12} />{dossier.type_affaire_libelle}</span>
             </div>
           </div>
-          <div className="flex gap-2 shrink-0 pt-1">
+          <div className="flex gap-2 shrink-0 pt-1 flex-wrap justify-end">
+            {isChef && dossier.statut !== "archive" && (
+              <button
+                onClick={() => setShowEdit(true)}
+                className="inline-flex items-center gap-1.5 h-10 px-4 bg-card border border-border text-foreground rounded text-[13px] font-semibold hover:bg-secondary transition-colors"
+              >
+                <Pencil size={14} />Modifier
+              </button>
+            )}
+            {isChef && dossier.statut === "en_cours" && (
+              <button
+                onClick={handleCloturer}
+                className="inline-flex items-center gap-1.5 h-10 px-4 bg-card border border-border text-foreground rounded text-[13px] font-semibold hover:bg-secondary transition-colors"
+              >
+                <CheckCheck size={14} />Clôturer
+              </button>
+            )}
+            {isChef && (dossier.statut === "termine" || dossier.statut === "en_cours") && (
+              <button
+                onClick={handleArchiver}
+                className="inline-flex items-center gap-1.5 h-10 px-4 bg-card border border-border text-muted-foreground rounded text-[13px] font-semibold hover:bg-secondary transition-colors"
+              >
+                <Archive size={14} />Archiver
+              </button>
+            )}
             {(dossier.statut === "en_attente") && (
               <button
                 onClick={() => setShowAffectation(true)}
@@ -189,7 +239,7 @@ export default function DossierDetail() {
                     <User size={18} className="text-primary" />
                   </div>
                   <div>
-                    <div className="text-sm font-semibold text-foreground mb-0.5">{dossier.client_nom ?? "—"}</div>
+                    <div className="text-sm font-semibold text-foreground mb-0.5">{dossier.client_nom ?? "-"}</div>
                     <div className="text-xs text-muted-foreground">
                       Client associé au dossier
                     </div>
@@ -235,7 +285,7 @@ export default function DossierDetail() {
                     <div className="flex items-center gap-2.5">
                       <div className="w-8 h-8 rounded bg-secondary flex items-center justify-center shrink-0"><Home size={15} className="text-primary" /></div>
                       <div>
-                        <div className="text-[13px] font-medium text-foreground">{agence?.nom ?? "—"}</div>
+                        <div className="text-[13px] font-medium text-foreground">{agence?.nom ?? "-"}</div>
                         {agence && <div className="text-[11px] text-muted-foreground">{agence.ville}{agence.est_siege ? " · Siège" : ""}</div>}
                       </div>
                     </div>
@@ -275,7 +325,7 @@ export default function DossierDetail() {
                 <div className="flex flex-col gap-2.5">
                   <InfoPair label="Référence" value={dossier.reference} mono />
                   <InfoPair label="Type d'affaire" value={dossier.type_affaire_libelle} />
-                  <InfoPair label="Agence réceptrice" value={dossier.agence_receptrice_nom ?? "—"} />
+                  <InfoPair label="Agence réceptrice" value={dossier.agence_receptrice_nom ?? "-"} />
                 </div>
               </SectionCard>
             </div>
@@ -314,6 +364,18 @@ export default function DossierDetail() {
         onClose={() => setShowTransfer(false)}
         onConfirm={() => {
           setShowTransfer(false);
+          refetchDossiers();
+        }}
+      />
+
+      {/* Modifier dossier modal (remount on dossier change pour reinitialiser le formulaire) */}
+      <ModifierDossierModal
+        key={dossier.id}
+        dossier={dossier}
+        open={showEdit}
+        onClose={() => setShowEdit(false)}
+        onSaved={() => {
+          setShowEdit(false);
           refetchDossiers();
         }}
       />

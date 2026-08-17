@@ -8,7 +8,7 @@ from app.models.Client import Client
 from app.models.Agence import Agence
 from app.models.TypeAffaire import TypeAffaire
 from app.models.HistoriqueAction import HistoriqueAction
-from app.schemas.dossier import DossierCreate, DossierAffectation, DossierStatutUpdate, DossierRead
+from app.schemas.dossier import DossierCreate, DossierAffectation, DossierStatutUpdate, DossierRead, DossierUpdateRequest
 
 
 # Transitions de statut autorisees
@@ -201,6 +201,41 @@ def affecter_dossier(dossier_id: int, data: DossierAffectation, db: Session,user
     db.add(histo)
     db.commit()
 
+    db.refresh(dossier)
+    return _to_read(dossier)
+
+
+def update_dossier(dossier_id: int, data: DossierUpdateRequest, user: User, db: Session) -> DossierRead:
+    query = db.query(Dossier).filter(Dossier.id == dossier_id)
+    query = _apply_role_filter(query, user)
+    dossier = query.first()
+    if not dossier:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Dossier non trouve")
+
+    update_data = data.model_dump(exclude_unset=True)
+    if not update_data:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Aucun champ a modifier")
+    if "client_id" in update_data and not db.query(Client).filter(Client.id == update_data["client_id"]).first():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Client non trouve")
+    if "type_affaire_id" in update_data and not db.query(TypeAffaire).filter(TypeAffaire.id == update_data["type_affaire_id"]).first():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Type d'affaire non trouve")
+
+    ancienne_valeur = DossierRead.model_validate(dossier).model_dump(mode="json")
+    for field, value in update_data.items():
+        setattr(dossier, field, value)
+
+    nouvelle_valeur = DossierRead.model_validate(dossier).model_dump(mode="json")
+    histo = HistoriqueAction(
+        dossier_id=dossier.id,
+        user_id=user.id,
+        action="modification_dossier",
+        ancienne_valeur=ancienne_valeur,
+        nouvelle_valeur=nouvelle_valeur,
+        commentaire="",
+        created_at=datetime.now(timezone.utc),
+    )
+    db.add(histo)
+    db.commit()
     db.refresh(dossier)
     return _to_read(dossier)
 

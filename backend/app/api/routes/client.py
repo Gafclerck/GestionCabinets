@@ -7,6 +7,7 @@ from app.services.clients_service import (
     list_clients,
     get_client_by_id,
     update_client,
+    delete_client,
 )
 
 router = APIRouter()
@@ -34,3 +35,8 @@ def read_one(client_id: int, db: SessionDep, current_user: CurrentUser) -> Clien
 @router.put("/{client_id}")
 def update(client_id: int, data: ClientUpdate, db: SessionDep, current_user: CurrentUser) -> ClientRead:
     return update_client(client_id, data, db)
+
+
+@router.delete("/{client_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete(client_id: int, db: SessionDep, current_user: CurrentUser) -> None:
+    delete_client(client_id, db)

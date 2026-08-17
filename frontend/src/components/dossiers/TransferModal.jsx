@@ -60,7 +60,7 @@ function TransferBody({ dossier, onClose, onConfirm }) {
         {dossier && (
           <p className="text-sm text-muted-foreground">
             Vous allez demander le transfert du dossier{" "}
-            <span className="font-medium text-foreground">{dossier.reference}</span> —{" "}
+            <span className="font-medium text-foreground">{dossier.reference}</span> -{" "}
             {dossier.titre}
           </p>
         )}

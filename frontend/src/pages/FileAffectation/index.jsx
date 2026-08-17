@@ -125,7 +125,7 @@ export default function FileAffectation() {
         {dossiersEnAttente.length === 0 ? (
           <EmptyState
             icon={CheckCircle}
-            title="Aucun dossier en attente — bon travail !"
+            title="Aucun dossier en attente - bon travail !"
             description="Tous les dossiers reçus ont été affectés. Repassez plus tard ou consultez la liste complète des dossiers."
           />
         ) : (

@@ -5,12 +5,14 @@ from fastapi.responses import StreamingResponse
 
 from app.core.deps import SessionDep, CurrentUser
 from app.core.storage import MAX_FILE_SIZE, ALLOWED_MIME_TYPES
+from app.schemas.document import DocumentUpdateRequest
 from app.services.document_service import (
     upload_document,
     list_documents,
     get_document,
     get_file_stream,
     delete_document,
+    update_document,
 )
 
 router = APIRouter()
@@ -49,6 +51,11 @@ def download(doc_id: int, db: SessionDep, current_user: CurrentUser):
     chunks, nom_fichier, type_mime = get_file_stream(doc_id, current_user, db)
     headers = {"Content-Disposition": f"attachment; filename*=UTF-8''{quote(nom_fichier)}"}
     return StreamingResponse(chunks, media_type=type_mime or "application/octet-stream", headers=headers)
+
+
+@router.patch("/{doc_id}")
+def update(doc_id: int, payload: DocumentUpdateRequest, db: SessionDep, current_user: CurrentUser):
+    return update_document(doc_id, payload, current_user, db)
 
 
 @router.delete("/{doc_id}", status_code=204)

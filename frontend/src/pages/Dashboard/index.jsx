@@ -47,7 +47,7 @@ function GerantCentralDashboard() {
       <div className="max-w-[1280px] mx-auto">
         <div className="mb-7">
           <h1 className="text-2xl font-bold text-foreground mb-1">Tableau de bord</h1>
-          <p className="text-sm text-muted-foreground">Vue d'ensemble de l'activité — Cabinet Diop & Associés</p>
+          <p className="text-sm text-muted-foreground">Vue d'ensemble de l'activité - Cabinet Diop & Associés</p>
         </div>
 
         <div className="grid grid-cols-4 gap-4 mb-8">
@@ -113,7 +113,7 @@ function GerantCentralDashboard() {
         </div>
 
         <div className="grid grid-cols-[1fr_auto] gap-6 items-start">
-          <SectionCard title="Transferts en attente d'approbation" subtitle="Lecture seule — approbation depuis la fiche dossier">
+          <SectionCard title="Transferts en attente d'approbation" subtitle="Lecture seule - approbation depuis la fiche dossier">
             {transfertsPendants.length === 0 ? (
               <div className="text-center py-8">
                 <CheckCircle size={28} className="text-success mx-auto mb-2" />
@@ -213,7 +213,7 @@ function AvocatEnChefDashboard({ user }) {
       <div className="max-w-[1280px] mx-auto">
         <div className="mb-7">
           <h1 className="text-2xl font-bold text-foreground mb-1">Tableau de bord</h1>
-          <p className="text-sm text-muted-foreground">{monAgence?.nom ?? "Mon agence"} — vue de l'Avocat en chef</p>
+          <p className="text-sm text-muted-foreground">{monAgence?.nom ?? "Mon agence"} - vue de l'Avocat en chef</p>
         </div>
 
         <div className="grid grid-cols-3 gap-4 mb-8">
@@ -315,7 +315,7 @@ function AvocatEnChefDashboard({ user }) {
           </div>
         </div>
 
-        <SectionCard title={`Charge de l'agence — ${monAgence?.ville ?? "Mon agence"}`} subtitle="Répartition des dossiers actifs par avocat">
+        <SectionCard title={`Charge de l'agence - ${monAgence?.ville ?? "Mon agence"}`} subtitle="Répartition des dossiers actifs par avocat">
           {chargeAgence.length === 0 ? (
             <p className="text-[13px] text-muted-foreground py-4">Aucun avocat dans cette agence.</p>
           ) : (
