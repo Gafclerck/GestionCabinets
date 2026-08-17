@@ -1,6 +1,6 @@
 import {
   FileText, FileSpreadsheet, FilePlus, Eye, Download, Trash2,
-  ChevronDown, Lock, X, AlertCircle, Shield, Loader2
+  ChevronDown, Lock, X, AlertCircle, Shield, Loader2, Pencil
 } from "lucide-react";
 import { useState, useRef } from "react";
 import { useDocuments } from "../../hooks/useDocuments";
@@ -55,12 +55,14 @@ export default function Ongletdocument({ dossierId, usersMap }) {
   const { data: documents = [], loading, error, refetch } = useDocuments(dossierId);
 
   const [isDragOver, setIsDragOver] = useState(false);
+  const [pendingFiles, setPendingFiles] = useState([]);
   const [isConfidentiel, setIsConfidentiel] = useState(false);
   const [description, setDescription] = useState("");
   const [uploadError, setUploadError] = useState("");
   const [actionError, setActionError] = useState("");
   const [uploading, setUploading] = useState(false);
   const [sortOrder, setSortOrder] = useState("desc");
+  const [editing, setEditing] = useState(null);
 
   const fileInputRef = useRef(null);
 
@@ -76,7 +78,11 @@ export default function Ongletdocument({ dossierId, usersMap }) {
     }
   };
 
-  const uploadFiles = async (files) => {
+  // La selection d'un fichier ne declenche PLUS l'upload : le fichier est mis
+  // en attente (pendingFiles) et uploade seulement apres validation dans le
+  // panneau de confirmation (ou la description et la confidentialite se
+  // reglent avant l'envoi).
+  const stageFiles = (files) => {
     setUploadError("");
     const fileList = Array.from(files);
     if (fileList.length === 0) return;
@@ -89,15 +95,26 @@ export default function Ongletdocument({ dossierId, usersMap }) {
       return;
     }
 
+    setPendingFiles((prev) => [...prev, ...fileList]);
+  };
+
+  const removePendingFile = (index) => {
+    setPendingFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const confirmUpload = async () => {
+    if (pendingFiles.length === 0) return;
     setUploading(true);
+    setUploadError("");
     try {
-      for (const file of fileList) {
+      for (const file of pendingFiles) {
         await documentService.upload(dossierId, {
           fichier: file,
           description,
           confidentiel: isConfidentiel,
         });
       }
+      setPendingFiles([]);
       setDescription("");
       await refetch();
     } catch (err) {
@@ -109,7 +126,7 @@ export default function Ongletdocument({ dossierId, usersMap }) {
 
   const handleFileInputChange = (e) => {
     if (e.target.files && e.target.files.length > 0) {
-      uploadFiles(e.target.files);
+      stageFiles(e.target.files);
       e.target.value = "";
     }
   };
@@ -128,7 +145,7 @@ export default function Ongletdocument({ dossierId, usersMap }) {
     e.preventDefault();
     setIsDragOver(false);
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      uploadFiles(e.dataTransfer.files);
+      stageFiles(e.dataTransfer.files);
     }
   };
 
@@ -141,6 +158,28 @@ export default function Ongletdocument({ dossierId, usersMap }) {
     const bTime = new Date(b.created_at).getTime();
     return sortOrder === "desc" ? bTime - aTime : aTime - bTime;
   });
+
+  const startEdit = (doc) => {
+    setEditing({ id: doc.id, description: doc.description || "", confidentiel: doc.confidentiel });
+  };
+
+  const updateEditing = (patch) => {
+    setEditing((prev) => (prev ? { ...prev, ...patch } : prev));
+  };
+
+  const saveEdit = async () => {
+    if (!editing) return;
+    try {
+      await documentService.update(editing.id, {
+        description: editing.description,
+        confidentiel: editing.confidentiel,
+      });
+      setEditing(null);
+      await refetch();
+    } catch {
+      setActionError("Erreur lors de la mise a jour du document.");
+    }
+  };
 
   // L'endpoint fichier exige le header Bearer : on recupere le blob via l'API
   // puis on ouvre l'object URL dans un nouvel onglet. On libere l'URL une fois
@@ -223,33 +262,9 @@ export default function Ongletdocument({ dossierId, usersMap }) {
               }}
               className="inline-flex items-center gap-2 px-4 py-2 bg-background border border-border rounded-lg text-xs font-medium text-foreground hover:bg-secondary transition-colors shadow-sm"
             >
-              {uploading ? (
-                <Loader2 className="w-4 h-4 text-muted-foreground animate-spin" />
-              ) : (
-                <FilePlus className="w-4 h-4 text-muted-foreground" />
-              )}
-              {uploading ? "Upload en cours..." : "Sélectionner un fichier"}
+              <FilePlus className="w-4 h-4 text-muted-foreground" />
+              Sélectionner un fichier
             </button>
-          </div>
-
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 pt-1 px-1">
-            <input
-              type="text"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Description (optionnelle)"
-              className="flex-1 h-9 text-xs bg-background border border-border rounded-md px-3 placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-            />
-            <label className="flex items-center gap-2 text-xs text-foreground font-medium cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={isConfidentiel}
-                onChange={(e) => setIsConfidentiel(e.target.checked)}
-                className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
-              />
-              <Shield className="w-3.5 h-3.5 text-amber-500 inline" />
-              Marquer comme confidentiel
-            </label>
           </div>
 
           {uploadError && (
@@ -264,6 +279,88 @@ export default function Ongletdocument({ dossierId, usersMap }) {
               >
                 <X className="w-4 h-4" />
               </button>
+            </div>
+          )}
+
+          {/* Panneau de confirmation : les fichiers restent en attente tant que
+              la description et la confidentialite ne sont pas validees. */}
+          {pendingFiles.length > 0 && (
+            <div className="bg-secondary/20 border border-primary/30 rounded-xl p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="text-xs font-semibold text-foreground">
+                  {pendingFiles.length} fichier{pendingFiles.length > 1 ? "s" : ""} en attente de confirmation
+                </div>
+                <button
+                  onClick={() => setPendingFiles([])}
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Tout annuler
+                </button>
+              </div>
+
+              <div className="divide-y divide-border max-h-48 overflow-y-auto">
+                {pendingFiles.map((file, i) => {
+                  const type = getDocType(file.name);
+                  return (
+                    <div key={`${file.name}-${i}`} className="flex items-center gap-3 py-2">
+                      {getFileIcon(type)}
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-medium text-foreground truncate">{file.name}</div>
+                        <div className="text-[11px] text-muted-foreground">{formatBytes(file.size)}</div>
+                      </div>
+                      <button
+                        onClick={() => removePendingFile(i)}
+                        title="Retirer"
+                        className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                <input
+                  type="text"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Description (optionnelle)"
+                  className="flex-1 h-9 text-xs bg-background border border-border rounded-md px-3 placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+                <label className="flex items-center gap-2 text-xs text-foreground font-medium cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={isConfidentiel}
+                    onChange={(e) => setIsConfidentiel(e.target.checked)}
+                    className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+                  />
+                  <Shield className="w-3.5 h-3.5 text-amber-500 inline" />
+                  Marquer comme confidentiel
+                </label>
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={confirmUpload}
+                  disabled={uploading}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-xs font-semibold hover:opacity-90 transition-opacity disabled:opacity-60"
+                >
+                  {uploading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <FilePlus className="w-4 h-4" />
+                  )}
+                  {uploading ? "Upload en cours..." : `Confirmer l'ajout (${pendingFiles.length})`}
+                </button>
+                <button
+                  onClick={() => setPendingFiles([])}
+                  disabled={uploading}
+                  className="px-4 py-2 bg-background border border-border rounded-lg text-xs font-medium text-muted-foreground hover:bg-secondary transition-colors"
+                >
+                  Annuler
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -333,6 +430,7 @@ export default function Ongletdocument({ dossierId, usersMap }) {
               {sortedDocuments.map((doc) => {
                 const type = getDocType(doc.nom_fichier);
                 const auteur = getAuteur(doc, usersMap);
+                const isEditing = editing?.id === doc.id;
                 return (
                   <div
                     key={doc.id}
@@ -349,17 +447,46 @@ export default function Ongletdocument({ dossierId, usersMap }) {
                             <Lock className="w-3 h-3 text-amber-500 shrink-0" title="Document confidentiel" />
                           )}
                         </div>
-                        <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-0.5">
-                          <span className="font-semibold uppercase">{type}</span>
-                          <span>•</span>
-                          <span>{formatBytes(doc.taille_octets)}</span>
-                          {doc.description && (
-                            <>
-                              <span>•</span>
-                              <span className="truncate max-w-[180px]">{doc.description}</span>
-                            </>
-                          )}
-                        </div>
+                        {isEditing ? (
+                          <div className="flex flex-col gap-1.5 mt-1.5 min-w-0">
+                            <input
+                              type="text"
+                              value={editing.description}
+                              onChange={(e) => updateEditing({ description: e.target.value })}
+                              placeholder="Description"
+                              className="h-8 text-xs bg-background border border-border rounded-md px-2.5 placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary w-full max-w-[280px]"
+                            />
+                            <div className="flex items-center gap-3">
+                              <label className="flex items-center gap-1.5 text-[11px] text-foreground font-medium cursor-pointer select-none">
+                                <input
+                                  type="checkbox"
+                                  checked={editing.confidentiel}
+                                  onChange={(e) => updateEditing({ confidentiel: e.target.checked })}
+                                  className="w-3.5 h-3.5 rounded border-border text-primary"
+                                />
+                                Confidentiel
+                              </label>
+                              <button onClick={saveEdit} className="text-[11px] font-semibold text-primary hover:underline">
+                                Enregistrer
+                              </button>
+                              <button onClick={() => setEditing(null)} className="text-[11px] text-muted-foreground hover:underline">
+                                Annuler
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-0.5">
+                            <span className="font-semibold uppercase">{type}</span>
+                            <span>•</span>
+                            <span>{formatBytes(doc.taille_octets)}</span>
+                            {doc.description && (
+                              <>
+                                <span>•</span>
+                                <span className="truncate max-w-[180px]">{doc.description}</span>
+                              </>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -385,6 +512,13 @@ export default function Ongletdocument({ dossierId, usersMap }) {
                       >
                         <Eye className="w-3.5 h-3.5" />
                         <span className="hidden sm:inline">Aperçu</span>
+                      </button>
+                      <button
+                        onClick={() => (isEditing ? setEditing(null) : startEdit(doc))}
+                        title="Modifier la description"
+                        className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={() => downloadFile(doc)}
