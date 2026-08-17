@@ -2,9 +2,10 @@ import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Clock, UserCheck,
-  CheckCircle, ChevronRight, List,
+  CheckCircle, ChevronRight, ChevronDown, List,
 } from "lucide-react";
 import { useDossiers } from "../../hooks/useDossiers";
+import { estEnAffectation } from "../../lib/constants";
 import StatusBadge from "../../components/ui/StatusBadge";
 import PrioriteStars from "../../components/ui/PrioriteStars";
 import EmptyState from "../../components/ui/EmptyState";
@@ -74,13 +75,14 @@ export default function FileAffectation() {
   const { data: dossiers = [], loading } = useDossiers();
   const [affectationTarget, setAffectationTarget] = useState(null);
   const [affectedRefs, setAffectedRefs] = useState(new Set());
+  const [sortDir, setSortDir] = useState("asc");
 
-  const dossiersEnAttente = useMemo(() =>
-    dossiers
-      .filter((d) => d.statut === "en_attente" && !affectedRefs.has(d.reference))
-      .sort((a, b) => b.priorite - a.priorite),
-    [dossiers, affectedRefs]
-  );
+  const dossiersEnAttente = useMemo(() => {
+    const t = (d) => new Date(d.date_reception).getTime();
+    return dossiers
+      .filter((d) => estEnAffectation(d.statut) && !affectedRefs.has(d.reference))
+      .sort((a, b) => (sortDir === "asc" ? t(a) - t(b) : t(b) - t(a)));
+  }, [dossiers, affectedRefs, sortDir]);
 
   function handleAffecter(d) {
     setAffectationTarget(d);
@@ -113,11 +115,24 @@ export default function FileAffectation() {
           </div>
 
           {dossiersEnAttente.length > 0 && (
-            <div className="flex items-center gap-2 bg-status-attente-bg text-status-attente-text rounded-full px-4 py-2 shrink-0">
-              <Clock size={13} />
-              <span className="text-[13px] font-semibold tabular-nums">
-                {dossiersEnAttente.length} en attente
-              </span>
+            <div className="flex items-center gap-3 shrink-0">
+              <div className="relative">
+                <select
+                  value={sortDir}
+                  onChange={(e) => setSortDir(e.target.value)}
+                  className="appearance-none h-9 pr-8 pl-3 border border-border bg-card rounded text-[13px] text-muted-foreground cursor-pointer outline-none min-w-[185px]"
+                >
+                  <option value="asc">Plus anciens d'abord</option>
+                  <option value="desc">Plus récents d'abord</option>
+                </select>
+                <ChevronDown size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground" />
+              </div>
+              <div className="flex items-center gap-2 bg-status-attente-bg text-status-attente-text rounded-full px-4 py-2 shrink-0">
+                <Clock size={13} />
+                <span className="text-[13px] font-semibold tabular-nums">
+                  {dossiersEnAttente.length} en attente
+                </span>
+              </div>
             </div>
           )}
         </div>

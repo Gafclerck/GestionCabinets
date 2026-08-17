@@ -1,6 +1,7 @@
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 from datetime import datetime, timezone
+from typing import Optional
 
 from app.models.Dossier import Dossier, StatutDossier
 from app.models.User import User, UserRole
@@ -23,7 +24,7 @@ TRANSITIONS_VALIDES = {
 # A revoir au lieu ed filtrer et prendre les champs specifque on renvoi des models imbriques le front
 # se chargera d'afficher ce qu'il veux
 # Probleme de  dette version : du verfitting avec le front ce qui n'est pas bien
-def _to_read(d: Dossier) -> DossierRead:
+def _to_read(d: Dossier, motif_transfert: Optional[str] = None) -> DossierRead:
     return DossierRead(
         id=d.id,
         reference=d.reference,
@@ -46,7 +47,41 @@ def _to_read(d: Dossier) -> DossierRead:
         date_reception=d.date_reception,
         date_affectation=d.date_affectation,
         date_cloture=d.date_cloture,
+        motif_transfert=motif_transfert,
     )
+
+
+# Motif du dernier transfert d'un dossier. Le motif n'est pas une colonne du dossier :
+# il est historique dans HistoriqueAction (action="transfert", commentaire=motif).
+# Le calculer depuis l'historique evite une migration et conserve le dernier motif connu.
+def _latest_transfert_motif(db: Session, dossier_id: int) -> Optional[str]:
+    histo = (
+        db.query(HistoriqueAction)
+        .filter(HistoriqueAction.dossier_id == dossier_id, HistoriqueAction.action == "transfert")
+        .order_by(HistoriqueAction.created_at.desc())
+        .first()
+    )
+    return histo.commentaire if histo else None
+
+
+# Version groupee pour la liste : une seule requete pour tous les dossiers de la page (pas de N+1).
+def _transfert_motifs_for(db: Session, dossier_ids: list[int]) -> dict[int, str]:
+    if not dossier_ids:
+        return {}
+    rows = (
+        db.query(HistoriqueAction.dossier_id, HistoriqueAction.commentaire)
+        .filter(
+            HistoriqueAction.dossier_id.in_(dossier_ids),
+            HistoriqueAction.action == "transfert",
+        )
+        .order_by(HistoriqueAction.created_at.desc())
+        .all()
+    )
+    motifs: dict[int, str] = {}
+    for dossier_id, commentaire in rows:
+        if dossier_id not in motifs:
+            motifs[dossier_id] = commentaire
+    return motifs
 
 # A renforcer plus tard 
 def _generate_reference(db: Session) -> str:
@@ -153,7 +188,8 @@ def list_dossiers(user: User, db: Session, skip: int = 0, limit: int = 20) -> li
     query = db.query(Dossier)
     query = _apply_role_filter(query, user)
     dossiers = query.order_by(Dossier.date_reception.desc()).offset(skip).limit(limit).all()
-    return [_to_read(d) for d in dossiers]
+    motifs = _transfert_motifs_for(db, [d.id for d in dossiers])
+    return [_to_read(d, motifs.get(d.id)) for d in dossiers]
 
 
 def get_dossier_by_id(dossier_id: int, user: User, db: Session) -> DossierRead:
@@ -162,7 +198,7 @@ def get_dossier_by_id(dossier_id: int, user: User, db: Session) -> DossierRead:
     dossier = query.first()
     if not dossier:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Dossier non trouve")
-    return _to_read(dossier)
+    return _to_read(dossier, _latest_transfert_motif(db, dossier.id))
 
 
 def affecter_dossier(dossier_id: int, data: DossierAffectation, db: Session,user: User) -> DossierRead:
@@ -202,7 +238,7 @@ def affecter_dossier(dossier_id: int, data: DossierAffectation, db: Session,user
     db.commit()
 
     db.refresh(dossier)
-    return _to_read(dossier)
+    return _to_read(dossier, _latest_transfert_motif(db, dossier.id))
 
 
 def update_dossier(dossier_id: int, data: DossierUpdateRequest, user: User, db: Session) -> DossierRead:
@@ -237,7 +273,7 @@ def update_dossier(dossier_id: int, data: DossierUpdateRequest, user: User, db: 
     db.add(histo)
     db.commit()
     db.refresh(dossier)
-    return _to_read(dossier)
+    return _to_read(dossier, _latest_transfert_motif(db, dossier.id))
 
 
 def update_statut(dossier_id: int, data: DossierStatutUpdate, db: Session,user: User) -> DossierRead:
@@ -271,7 +307,7 @@ def update_statut(dossier_id: int, data: DossierStatutUpdate, db: Session,user: 
     db.add(histo)
     db.commit()
     db.refresh(dossier)
-    return _to_read(dossier)
+    return _to_read(dossier, _latest_transfert_motif(db, dossier.id))
 
 
 def transfer_dossier(dossier_id: int, motif: str, user: User, db: Session) -> DossierRead:
@@ -301,7 +337,7 @@ def transfer_dossier(dossier_id: int, motif: str, user: User, db: Session) -> Do
     db.add(histo)
     db.commit()
     db.refresh(dossier)
-    return _to_read(dossier)
+    return _to_read(dossier, motif)
 
 
 def delete_dossier(dossier_id: int, db: Session, user: User) -> None:

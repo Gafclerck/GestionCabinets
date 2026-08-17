@@ -113,11 +113,11 @@ function GerantCentralDashboard() {
         </div>
 
         <div className="grid grid-cols-[1fr_auto] gap-6 items-start">
-          <SectionCard title="Transferts en attente d'approbation" subtitle="Lecture seule - approbation depuis la fiche dossier">
+          <SectionCard title="Transferts à ré-affecter" subtitle="Affectation depuis la fiche dossier">
             {transfertsPendants.length === 0 ? (
               <div className="text-center py-8">
                 <CheckCircle size={28} className="text-success mx-auto mb-2" />
-                <p className="text-[13px] text-muted-foreground">Aucun transfert en attente</p>
+                <p className="text-[13px] text-muted-foreground">Aucun transfert à ré-affecter</p>
               </div>
             ) : (
               <div className="flex flex-col">
@@ -218,7 +218,7 @@ function AvocatEnChefDashboard({ user }) {
 
         <div className="grid grid-cols-3 gap-4 mb-8">
           <KpiCard label="Dossiers en file d'affectation" value={fileAttente.length} icon={List} accent />
-          <KpiCard label="Transferts à approuver" value={transfertsATraiter.length} icon={Repeat} warn />
+          <KpiCard label="Transferts à ré-affecter" value={transfertsATraiter.length} icon={Repeat} warn />
           <KpiCard label="Dossiers actifs dans l'agence" value={dossiersAgence.length} icon={Folder} />
         </div>
 
@@ -268,11 +268,11 @@ function AvocatEnChefDashboard({ user }) {
           </SectionCard>
 
           <div className="flex flex-col gap-6">
-            <SectionCard title="Transferts à traiter" subtitle="Demandes en attente dans mon agence">
+<SectionCard title="Transferts à ré-affecter" subtitle="Dossiers en attente de réaffectation dans mon agence">
               {transfertsATraiter.length === 0 ? (
-                <div className="text-center py-5">
-                  <CheckCircle size={24} className="text-success mx-auto mb-2" />
-                  <p className="text-[13px] text-muted-foreground">Aucune demande de transfert en attente</p>
+                <div className="flex flex-col items-center py-8">
+                  <Repeat size={28} className="text-success mx-auto mb-2 text-muted-foreground" />
+                  <p className="text-[13px] text-muted-foreground">Aucun transfert à ré-affecter</p>
                 </div>
               ) : (
                 <div className="flex flex-col">

@@ -819,3 +819,4 @@ These features exist in the frontend but have no backend endpoints yet:
 
 *Last updated: July 15, 2026*
 *Branch: develop*
+

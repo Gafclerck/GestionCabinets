@@ -53,6 +53,16 @@ export function isActif(statut) {
   return STATUTS_ACTIFS.includes(statut);
 }
 
+// Statuts d'un dossier en attente d'affectation (nouveau ou apres transfert).
+// La file d'affectation et le bouton du detail doivent traiter les deux de facon identique.
+export const STATUTS_EN_AFFECTATION = [
+  "en_attente", "en_attente_affectation",
+];
+
+export function estEnAffectation(statut) {
+  return STATUTS_EN_AFFECTATION.includes(statut);
+}
+
 // ─── Priorité 
 export const PRIORITE_LABELS = {
   1: "Très basse",

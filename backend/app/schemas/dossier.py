@@ -77,4 +77,7 @@ class DossierRead(BaseModel):
     date_affectation: Optional[datetime] = None
     date_cloture: Optional[datetime] = None
 
+    # Motif du dernier transfert (remis en file d'affectation), si le dossier en a fait l'objet.
+    motif_transfert: Optional[str] = None
+
     model_config = {"from_attributes": True}

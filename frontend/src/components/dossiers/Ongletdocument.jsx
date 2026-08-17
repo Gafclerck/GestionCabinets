@@ -51,7 +51,7 @@ function getAuteur(doc, usersMap) {
   };
 }
 
-export default function Ongletdocument({ dossierId, usersMap }) {
+export default function Ongletdocument({ dossierId, usersMap, onMutated }) {
   const { data: documents = [], loading, error, refetch } = useDocuments(dossierId);
 
   const [isDragOver, setIsDragOver] = useState(false);
@@ -117,6 +117,7 @@ export default function Ongletdocument({ dossierId, usersMap }) {
       setPendingFiles([]);
       setDescription("");
       await refetch();
+      onMutated?.();
     } catch (err) {
       handleApiError(err);
     } finally {
@@ -176,6 +177,7 @@ export default function Ongletdocument({ dossierId, usersMap }) {
       });
       setEditing(null);
       await refetch();
+      onMutated?.();
     } catch {
       setActionError("Erreur lors de la mise a jour du document.");
     }
@@ -222,6 +224,7 @@ export default function Ongletdocument({ dossierId, usersMap }) {
     try {
       await documentService.remove(doc.id);
       await refetch();
+      onMutated?.();
     } catch {
       setActionError("Erreur lors de la suppression du document.");
     }

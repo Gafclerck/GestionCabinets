@@ -9,7 +9,7 @@ import { useDossiers } from "../../hooks/useDossiers";
 import { useAgences } from "../../hooks/useAgences";
 import { useUsers } from "../../hooks/useUsers";
 import { useHistorique } from "../../hooks/useHistorique";
-import { ROLE_LABELS } from "../../lib/constants";
+import { ROLE_LABELS, estEnAffectation } from "../../lib/constants";
 import { getInitials } from "../../lib/utils";
 import { getActionConfig, getAuteurInfo, getTempsRelatif } from "../../lib/historique";
 import StatusBadge from "../../components/ui/StatusBadge";
@@ -122,11 +122,18 @@ export default function DossierDetail() {
   // Cloture et archivage reserves aux chefs (backend RequireChef sur /statut).
   const isChef = user.role === "chef_central" || user.role === "chef_agence";
 
+  // Resynchronise les infos du dossier ET son historique apres chaque mutation
+  // (l'historique ne se refetch pas seul : useHistorique ne depend que de dossier.id).
+  const refreshDossier = () => {
+    refetchDossiers();
+    history.refetch();
+  };
+
   const handleCloturer = async () => {
     if (!window.confirm(`Cloturer le dossier "${dossier.titre}" ?`)) return;
     try {
       await dossierService.updateStatut(dossier.id, { statut: "termine" });
-      refetchDossiers();
+      refreshDossier();
     } catch (err) {
       window.alert(err.response?.data?.detail || "Erreur lors de la cloture du dossier.");
     }
@@ -136,7 +143,7 @@ export default function DossierDetail() {
     if (!window.confirm(`Archiver le dossier "${dossier.titre}" ?`)) return;
     try {
       await dossierService.updateStatut(dossier.id, { statut: "archive" });
-      refetchDossiers();
+      refreshDossier();
     } catch (err) {
       window.alert(err.response?.data?.detail || "Erreur lors de l'archivage du dossier.");
     }
@@ -192,12 +199,13 @@ export default function DossierDetail() {
                 <Archive size={14} />Archiver
               </button>
             )}
-            {(dossier.statut === "en_attente") && (
+            {estEnAffectation(dossier.statut) && (
               <button
                 onClick={() => setShowAffectation(true)}
                 className="inline-flex items-center gap-1.5 h-10 px-4 bg-primary text-primary-foreground rounded text-[13px] font-semibold hover:bg-sidebar-accent transition-colors"
               >
-                <CheckCircle size={14} />Affecter le dossier
+                <CheckCircle size={14} />
+                {dossier.statut === "en_attente_affectation" ? "Réaffecter le dossier" : "Affecter le dossier"}
               </button>
             )}
           </div>
@@ -312,13 +320,22 @@ export default function DossierDetail() {
                       <div className="text-[13px] text-muted-foreground italic">Non affecté</div>
                     )}
                   </div>
-                  <div className="h-px bg-border" />
-                  <button
-                    onClick={() => setShowTransfer(true)}
-                    className="flex items-center justify-center gap-1.5 w-full h-10 border-[1.5px] border-border rounded bg-transparent cursor-pointer text-[13px] text-foreground font-medium hover:border-primary hover:bg-primary/5 transition-colors"
-                  >
-                    <Repeat size={14} />Demander un transfert
-                  </button>
+                  {dossier.statut === "en_attente_affectation" && dossier.motif_transfert && (
+                    <div className="text-[11px] text-muted-foreground px-2.5 py-2 bg-background rounded border-l-2 border-status-transfert-text">
+                      Motif du transfert : « {dossier.motif_transfert} »
+                    </div>
+                  )}
+                  {isChef && dossier.statut === "en_cours" && (
+                    <>
+                      <div className="h-px bg-border" />
+                      <button
+                        onClick={() => setShowTransfer(true)}
+                        className="flex items-center justify-center gap-1.5 w-full h-10 border-[1.5px] border-border rounded bg-transparent cursor-pointer text-[13px] text-foreground font-medium hover:border-primary hover:bg-primary/5 transition-colors"
+                      >
+                        <Repeat size={14} />Demander un transfert
+                      </button>
+                    </>
+                  )}
                 </div>
               </SectionCard>
               <SectionCard title="Informations">
@@ -332,7 +349,7 @@ export default function DossierDetail() {
           </div>
         )}
         {activeTab === "documents" && (
-          <Ongletdocument dossierId={dossier.id} usersMap={usersMap} />
+          <Ongletdocument dossierId={dossier.id} usersMap={usersMap} onMutated={() => history.refetch()} />
         )}
         {activeTab === "historique" && (
           <Onglethistorique history={history} usersMap={usersMap} />
@@ -351,7 +368,7 @@ export default function DossierDetail() {
         onClose={() => setShowAffectation(false)}
         onConfirm={() => {
           setShowAffectation(false);
-          refetchDossiers();
+          refreshDossier();
         }}
         initialAgenceId={dossier.analyse_ia?.agence_suggeree_id}
         initialAvocatId={dossier.analyse_ia?.avocat_suggere_id}
@@ -364,7 +381,7 @@ export default function DossierDetail() {
         onClose={() => setShowTransfer(false)}
         onConfirm={() => {
           setShowTransfer(false);
-          refetchDossiers();
+          refreshDossier();
         }}
       />
 
@@ -376,7 +393,7 @@ export default function DossierDetail() {
         onClose={() => setShowEdit(false)}
         onSaved={() => {
           setShowEdit(false);
-          refetchDossiers();
+          refreshDossier();
         }}
       />
     </div>
