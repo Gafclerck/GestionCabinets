@@ -62,6 +62,44 @@ cd Hackaton
 
 # Lancement de l'application
 
+## Option A : Docker Compose (tout-en-un)
+
+Lance la stack complete : Postgres + backend + frontend. Les migrations Alembic
+et la creation du super admin sont automatiques au demarrage du backend.
+
+Prerequis : Docker Desktop (ou docker engine + plugin compose).
+
+### 1. Configurer les variables
+
+```bash
+cp .env.example .env
+```
+
+Ouvrir `.env` a la racine et remplir au minimum `SECRET_KEY`,
+`SUPER_USER_EMAIL` et `SUPER_USER_PASSWORD`.
+
+### 2. Demarrer la stack
+
+```bash
+docker compose up -d --build
+```
+
+- Frontend : http://localhost:5173
+- Swagger : http://localhost:8000/docs
+
+### 3. (Optionnel) Charger des donnees de demo
+
+```bash
+docker compose --profile seed up seed
+```
+
+La base persiste dans le volume Docker `pgdata` : les donnees survivent a un
+`docker compose down`. Pour tout effacer : `docker compose down -v`.
+
+---
+
+## Option B : Installation manuelle
+
 ## 1. Créer la base de données PostgreSQL
 
 Se connecter a PostgreSQL et creer la base :
