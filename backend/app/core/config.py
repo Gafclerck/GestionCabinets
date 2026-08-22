@@ -17,6 +17,12 @@ class Settings(BaseSettings):
     SUPER_USER_EMAIL: str
     SUPER_USER_PASSWORD: str
 
+    S3_ACCESS_KEY : str
+    S3_SECRET_KEY : str
+    S3_ENDPOINT_URL : str
+    S3_BUCKET_NAME : str
+    S3_REGION : str = "auto"
+
     class Config:
         env_file = ".env"
 

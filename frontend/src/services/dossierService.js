@@ -23,6 +23,11 @@ export const dossierService = {
     return data;
   },
 
+  update: async (id, payload) => {
+    const { data } = await api.patch(`${BASE}/${id}`, payload);
+    return data;
+  },
+
   updateStatut: async (id, payload) => {
     const { data } = await api.patch(`${BASE}/${id}/statut`, payload);
     return data;

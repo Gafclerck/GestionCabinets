@@ -1,25 +1,127 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, MapPin, Phone, Building2, Users } from "lucide-react";
+import { ArrowLeft, MapPin, Phone, Building2, Users, Pencil, Power } from "lucide-react";
 import { useAgence } from "../../hooks/useAgences";
 import { formatDate } from "../../lib/utils";
 import { ROLE_LABELS } from "../../lib/constants";
 import Card, { CardContent, CardHeader, CardTitle } from "../../components/ui/Card";
 import Badge from "../../components/ui/Badge";
 import Button from "../../components/ui/Button";
+import Input from "../../components/ui/Input";
 import Avatar from "../../components/ui/Avatar";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from "../../components/ui/Dialog";
 import { agenceService } from "../../services/agenceService";
 import { useState, useEffect } from "react";
+
+function EditAgenceDialog({ agence, open, onClose, onSaved }) {
+  const [form, setForm] = useState({
+    nom: agence?.nom ?? "",
+    adresse: agence?.adresse ?? "",
+    ville: agence?.ville ?? "",
+    telephone: agence?.telephone ?? "",
+    est_siege: agence?.est_siege ?? false,
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+
+  const save = async () => {
+    if (!form.nom.trim() || !form.adresse.trim() || !form.ville.trim() || !form.telephone.trim()) {
+      setError("Tous les champs sont requis.");
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      await agenceService.update(agence.id, {
+        nom: form.nom.trim(),
+        adresse: form.adresse.trim(),
+        ville: form.ville.trim(),
+        telephone: form.telephone.trim(),
+        est_siege: form.est_siege,
+      });
+      onSaved();
+    } catch (err) {
+      setError(err.response?.data?.detail || "Erreur lors de la modification de l'agence.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Modifier l'agence</DialogTitle>
+        </DialogHeader>
+        <div className="flex-1 overflow-y-auto flex flex-col gap-4 px-6 py-4">
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-foreground">Nom</label>
+            <Input value={form.nom} onChange={(e) => setForm({ ...form, nom: e.target.value })} />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-foreground">Adresse</label>
+            <Input value={form.adresse} onChange={(e) => setForm({ ...form, adresse: e.target.value })} />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-foreground">Ville</label>
+            <Input value={form.ville} onChange={(e) => setForm({ ...form, ville: e.target.value })} />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-foreground">Telephone</label>
+            <Input value={form.telephone} onChange={(e) => setForm({ ...form, telephone: e.target.value })} />
+          </div>
+          <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
+            <input
+              type="checkbox"
+              checked={form.est_siege}
+              onChange={(e) => setForm({ ...form, est_siege: e.target.checked })}
+              className="rounded border-border"
+            />
+            Siege social
+          </label>
+        </div>
+        {error && (
+          <div className="mx-6 mb-2 px-3 py-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">{error}</div>
+        )}
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Annuler</Button>
+          <Button onClick={save} disabled={saving}>
+            {saving ? "Enregistrement..." : "Enregistrer"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 export default function AgenceDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { data: agence, loading } = useAgence(id);
+  const { data: agence, loading, refetch } = useAgence(id);
   const [users, setUsers] = useState([]);
+  const [showEdit, setShowEdit] = useState(false);
+  const [toggleBusy, setToggleBusy] = useState(false);
+  const [actionError, setActionError] = useState(null);
 
   useEffect(() => {
     if (!id) return;
     agenceService.getUsers(id).then(setUsers).catch(() => {});
   }, [id]);
+
+  const toggleActif = async () => {
+    if (!agence) return;
+    setToggleBusy(true);
+    setActionError(null);
+    try {
+      await agenceService.update(agence.id, { actif: !agence.actif });
+      refetch();
+    } catch (err) {
+      setActionError(err.response?.data?.detail || "Erreur lors de la mise a jour de l'agence.");
+    } finally {
+      setToggleBusy(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -71,7 +173,25 @@ export default function AgenceDetail() {
               </span>
             </div>
           </div>
+          <div className="flex gap-2 shrink-0">
+            <Button variant="outline" onClick={() => setShowEdit(true)}>
+              <Pencil size={14} />
+              Modifier
+            </Button>
+            <Button
+              variant={agence.actif ? "outline" : "default"}
+              onClick={toggleActif}
+              disabled={toggleBusy}
+            >
+              <Power size={14} />
+              {agence.actif ? "Desactiver" : "Activer"}
+            </Button>
+          </div>
         </div>
+
+        {actionError && (
+          <div className="mb-6 px-3 py-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">{actionError}</div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
           <Card>
@@ -163,6 +283,17 @@ export default function AgenceDetail() {
           </CardContent>
         </Card>
       </div>
+
+      <EditAgenceDialog
+        key={agence.id}
+        agence={agence}
+        open={showEdit}
+        onClose={() => setShowEdit(false)}
+        onSaved={() => {
+          setShowEdit(false);
+          refetch();
+        }}
+      />
     </div>
   );
 }

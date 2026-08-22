@@ -25,21 +25,21 @@ export function getAvatarColor(name) {
 }
 
 export function formatBytes(octets) {
-  if (!octets) return "—";
+  if (!octets) return "-";
   if (octets < 1024) return octets + " o";
   if (octets < 1048576) return (octets / 1024).toFixed(1) + " Ko";
   return (octets / 1048576).toFixed(1) + " Mo";
 }
 
 export function formatDate(dateStr) {
-  if (!dateStr) return "—";
+  if (!dateStr) return "-";
   return new Date(dateStr).toLocaleDateString("fr-FR", {
     day: "numeric", month: "short", year: "numeric",
   });
 }
 
 export function formatDateTime(dateStr) {
-  if (!dateStr) return "—";
+  if (!dateStr) return "-";
   return new Date(dateStr).toLocaleDateString("fr-FR", {
     day: "numeric", month: "short", year: "numeric",
     hour: "2-digit", minute: "2-digit",

@@ -36,12 +36,31 @@ export const STATUT_STYLES = {
   archive:                  { bg: "bg-status-archive-bg",   text: "text-status-archive-text" },
 };
 
+// Ordre d'affichage privilegie des dossiers: en cours d'abord, puis en attente, puis termines.
+export const STATUT_ORDRE = {
+  en_cours: 1,
+  en_attente: 2,
+  en_attente_affectation: 2,
+  termine: 3,
+  archive: 4,
+};
+
 export const STATUTS_ACTIFS = [
   "en_attente", "en_attente_affectation", "en_cours",
 ];
 
 export function isActif(statut) {
   return STATUTS_ACTIFS.includes(statut);
+}
+
+// Statuts d'un dossier en attente d'affectation (nouveau ou apres transfert).
+// La file d'affectation et le bouton du detail doivent traiter les deux de facon identique.
+export const STATUTS_EN_AFFECTATION = [
+  "en_attente", "en_attente_affectation",
+];
+
+export function estEnAffectation(statut) {
+  return STATUTS_EN_AFFECTATION.includes(statut);
 }
 
 // ─── Priorité 

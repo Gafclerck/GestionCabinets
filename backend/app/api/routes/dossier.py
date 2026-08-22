@@ -1,12 +1,13 @@
 from fastapi import APIRouter, Query, status
 
 from app.core.deps import SessionDep, CurrentUser, RequireChefAgence, RequireChefCentral, RequireChef
-from app.schemas.dossier import DossierCreate, DossierAffectation, DossierStatutUpdate, DossierRead, DossierTransfer
+from app.schemas.dossier import DossierCreate, DossierAffectation, DossierStatutUpdate, DossierRead, DossierTransfer, DossierUpdateRequest
 from app.services.dossier_service import (
     create_dossier,
     list_dossiers,
     get_dossier_by_id,
     affecter_dossier,
+    update_dossier,
     update_statut,
     transfer_dossier,
     delete_dossier,
@@ -35,13 +36,18 @@ def read_one(dossier_id: int, db: SessionDep, current_user: CurrentUser) -> Doss
     return get_dossier_by_id(dossier_id, current_user, db)
 
 
+@router.patch("/{dossier_id}")
+def patch(dossier_id: int, data: DossierUpdateRequest, db: SessionDep, current_user: RequireChef) -> DossierRead:
+    return update_dossier(dossier_id, data, current_user, db)
+
+
 @router.patch("/{dossier_id}/affecter")
 def affecter(dossier_id: int, data: DossierAffectation, db: SessionDep, current_user: RequireChef) -> DossierRead:
     return affecter_dossier(dossier_id, data, db,current_user)
 
 
 @router.patch("/{dossier_id}/statut")
-def changer_statut(dossier_id: int, data: DossierStatutUpdate, db: SessionDep, current_user: CurrentUser) -> DossierRead:
+def changer_statut(dossier_id: int, data: DossierStatutUpdate, db: SessionDep, current_user: RequireChef) -> DossierRead:
     return update_statut(dossier_id, data, db, current_user)
 
 

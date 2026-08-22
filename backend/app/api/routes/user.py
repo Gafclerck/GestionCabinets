@@ -1,10 +1,15 @@
 from fastapi import APIRouter, Query, status
 
 from app.core.deps import SessionDep, CurrentUser, RequireChefCentral
-from app.schemas.user import UserResponse, UserUpdateRequest
-from app.services.users_service import get_user_by_id, update_user
+from app.schemas.user import UpdateProfileRequest, UserResponse, UserUpdateRequest
+from app.services.users_service import get_user_by_id, update_me, update_user
 
 router = APIRouter()
+
+
+@router.patch("/me")
+def patch_me(data: UpdateProfileRequest, db: SessionDep, current_user: CurrentUser) -> UserResponse:
+    return update_me(db, current_user, data)
 
 
 @router.get("/all")

@@ -1,9 +1,13 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Bell, Search, ChevronDown, Settings, LogOut, X } from "lucide-react";
+import { Bell, Search, ChevronDown, Settings, LogOut, X, Building2, Plus } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
+import { useSearchQuery } from "../../hooks/useSearchQuery";
+import { useUrlParam } from "../../hooks/useUrlParam";
+import { useAgences } from "../../hooks/useAgences";
 import { ROLE_LABELS } from "../../lib/constants";
 import Avatar from "../ui/Avatar";
+import CompteModal from "./CompteModal";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -23,6 +27,8 @@ const ROUTE_TITLES = {
   parametres: "Paramètres",
 };
 
+const SEARCHABLE_ROUTES = new Set(["dossiers", "clients", "agences", "utilisateurs"]);
+
 function getPageTitle(pathname) {
   const segments = pathname.split("/").filter(Boolean);
   const root = segments[0] || "dashboard";
@@ -31,12 +37,15 @@ function getPageTitle(pathname) {
   return ROUTE_TITLES[root] || "Tableau de bord";
 }
 
-export default function Topbar({ onAgenceChange }) {
+export default function Topbar({ onNewDossier }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [q, setQ] = useSearchQuery();
+  const [agenceFiltre, setAgenceFiltre] = useUrlParam("agence");
+  const { data: agences = [] } = useAgences();
   const [searchOpen, setSearchOpen] = useState(false);
-  const [searchVal, setSearchVal] = useState("");
+  const [showCompte, setShowCompte] = useState(false);
   const searchRef = useRef(null);
 
   useEffect(() => {
@@ -50,60 +59,81 @@ export default function Topbar({ onAgenceChange }) {
 
   if (!user) return null;
 
+  const root = location.pathname.split("/").filter(Boolean)[0] || "dashboard";
+  const canSearch = SEARCHABLE_ROUTES.has(root);
+  const showAgenceSelect = user.role === "chef_central" && root === "dashboard";
+  const monAgence = agences.find((a) => a.id === user.agence_id);
+  const vueMonAgence = agenceFiltre === String(user.agence_id);
+
   return (
     <header className="h-14 bg-card border-b border-border flex items-center px-6 gap-4 shrink-0 relative z-10">
       <div className="flex items-center gap-2 flex-1">
         <h1 className="text-sm font-semibold text-foreground mr-3 hidden sm:block">
           {getPageTitle(location.pathname)}
         </h1>
-        <button
-          onClick={() => setSearchOpen(!searchOpen)}
-          className="text-muted-foreground hover:bg-secondary p-1.5 rounded min-w-[44px] min-h-[44px] flex items-center justify-center"
-          aria-label="Recherche"
-        >
-          <Search size={18} />
-        </button>
-        <div className={`overflow-hidden transition-all duration-200 ${searchOpen ? "w-[280px]" : "w-0"}`}>
-          <input
-            ref={searchRef}
-            type="text"
-            value={searchVal}
-            onChange={(e) => setSearchVal(e.target.value)}
-            placeholder="Référence, titre, client…"
-            onBlur={() => { if (!searchVal) setSearchOpen(false); }}
-            className="w-[280px] border border-border rounded-md px-3 py-1.5 text-[13px] bg-background text-foreground outline-none"
-          />
-        </div>
-        {searchOpen && searchVal && (
-          <button
-            onClick={() => { setSearchVal(""); searchRef.current?.focus(); }}
-            className="text-muted-foreground p-0.5"
-          >
-            <X size={14} />
-          </button>
+        {showAgenceSelect && (
+          <DropdownMenu>
+            <DropdownMenuTrigger className="flex items-center gap-2 text-[13px] font-medium text-foreground bg-secondary rounded-md px-3 py-1.5 hover:opacity-85 transition-opacity cursor-pointer outline-none">
+              <Building2 size={14} className="text-muted-foreground" />
+              <span>{vueMonAgence ? `Mon agence${monAgence ? ` - ${monAgence.nom}` : ""}` : "Toutes les agences"}</span>
+              <ChevronDown size={13} className="text-muted-foreground" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-[220px]">
+              <DropdownMenuLabel className="text-[11px] text-muted-foreground uppercase tracking-wider">Vue du tableau de bord</DropdownMenuLabel>
+              <DropdownMenuItem onClick={() => setAgenceFiltre("")}>
+                Toutes les agences
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => setAgenceFiltre(user.agence_id)}>
+                <div className="flex flex-col">
+                  <span>Mon agence</span>
+                  {monAgence && <span className="text-[11px] text-muted-foreground">{monAgence.nom} · {monAgence.ville}</span>}
+                </div>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+        {canSearch && (
+          <>
+            <button
+              onClick={() => setSearchOpen(!searchOpen)}
+              className="text-muted-foreground hover:bg-secondary p-1.5 rounded min-w-[44px] min-h-[44px] flex items-center justify-center"
+              aria-label="Recherche"
+            >
+              <Search size={18} />
+            </button>
+            <div className={`overflow-hidden transition-all duration-200 ${searchOpen ? "w-[280px]" : "w-0"}`}>
+              <input
+                ref={searchRef}
+                type="text"
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Référence, titre, client…"
+                onBlur={() => { if (!q) setSearchOpen(false); }}
+                className="w-[280px] border border-border rounded-md px-3 py-1.5 text-[13px] bg-background text-foreground outline-none"
+              />
+            </div>
+            {searchOpen && q && (
+              <button
+                onClick={() => { setQ(""); searchRef.current?.focus(); }}
+                className="text-muted-foreground p-0.5"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </>
         )}
       </div>
 
       <div className="flex items-center gap-2 ml-auto">
-        {user.role === "chef_central" && (
-          <DropdownMenu>
-            <DropdownMenuTrigger className="inline-flex items-center gap-1.5 h-9 px-3 border border-border rounded-md bg-card text-[13px] text-foreground cursor-pointer hover:bg-secondary transition-colors outline-none">
-              Toutes les agences
-              <ChevronDown size={13} className="text-muted-foreground" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-[200px]">
-              <DropdownMenuItem onClick={() => onAgenceChange?.("all")}>
-                Toutes les agences
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => onAgenceChange?.("all")}>
-                Agence Siège
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onAgenceChange?.("all")}>
-                Agence Dakar
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+        {onNewDossier && (
+          <button
+            onClick={onNewDossier}
+            className="flex items-center gap-1.5 bg-primary text-primary-foreground rounded-md px-3 py-2 text-xs font-semibold hover:opacity-90 transition-opacity"
+          >
+            <Plus size={14} />
+            Nouveau dossier
+          </button>
         )}
 
         <button
@@ -142,7 +172,7 @@ export default function Topbar({ onAgenceChange }) {
               </span>
             </div>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setShowCompte(true)}>
               <Settings size={15} className="text-muted-foreground" />
               Paramètres du compte
             </DropdownMenuItem>
@@ -154,6 +184,8 @@ export default function Topbar({ onAgenceChange }) {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      <CompteModal open={showCompte} onClose={() => setShowCompte(false)} />
     </header>
   );
 }
