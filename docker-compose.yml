@@ -1,0 +1,87 @@
+# Stack complete : db (Postgres) + backend (FastAPI) + frontend (nginx).
+# Demarrage : docker compose up -d --build
+# Donnees de demo : docker compose --profile seed up -d
+#
+# Les variables viennent du fichier .env a la racine (voir .env.example),
+# lu nativement par docker compose pour l'interpolation ${...}.
+
+x-backend-env: &backend-env
+  # La BDD conteneurisee est un Postgres local : on reutilise le slot DEVEL
+  # de la config existante au lieu d'ajouter un nouveau mode.
+  TESTING_MODE: "False"
+  DEVEL_MODE: "True"
+  PRODUCTION_MODE: "False"
+  DEBUG: "False"
+  DATABASE_URL_DEV: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+  # Champs requis par Settings meme s'ils sont inutilisés en mode DEVEL.
+  DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+  DATABASE_URL_TEST: sqlite:///./test.db
+  SECRET_KEY: ${SECRET_KEY:?SECRET_KEY requis dans .env}
+  SUPER_USER_EMAIL: ${SUPER_USER_EMAIL:?SUPER_USER_EMAIL requis dans .env}
+  SUPER_USER_PASSWORD: ${SUPER_USER_PASSWORD:?SUPER_USER_PASSWORD requis dans .env}
+  ALLOWED_ORIGINS: '["http://localhost:5173"]'
+  S3_ENDPOINT_URL: ${S3_ENDPOINT_URL:-https://placeholder.r2.cloudflarestorage.com}
+  S3_ACCESS_KEY: ${S3_ACCESS_KEY:-placeholder}
+  S3_SECRET_KEY: ${S3_SECRET_KEY:-placeholder}
+  S3_BUCKET_NAME: ${S3_BUCKET_NAME:-placeholder}
+  S3_REGION: auto
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER requis dans .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD requis dans .env}
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB requis dans .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    image: hackaton-backend
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment: *backend-env
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/docs')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: /
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "5173:5173"
+
+  # One-shot : peuple la base avec des donnees de demo, puis se termine.
+  # Usage : docker compose --profile seed up seed
+  seed:
+    image: hackaton-backend
+    build: ./backend
+    profiles: ["seed"]
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment: *backend-env
+    command: python -m scripts.seed_data
+
+volumes:
+  pgdata:
