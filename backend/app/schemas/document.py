@@ -15,3 +15,7 @@ class DocumentRead(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+class DocumentUpdateRequest(BaseModel):
+    description: Optional[str] = None
+    confidentiel: Optional[bool] = None

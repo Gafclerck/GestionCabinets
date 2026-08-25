@@ -22,4 +22,8 @@ export const clientService = {
     const { data } = await api.put(`${BASE}/${id}`, payload);
     return data;
   },
+
+  remove: async (id) => {
+    await api.delete(`${BASE}/${id}`);
+  },
 };

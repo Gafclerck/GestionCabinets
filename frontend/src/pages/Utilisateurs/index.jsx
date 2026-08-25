@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { Search, X, Plus, Grid, List, Mail, Building2 } from "lucide-react";
 import { useUsers } from "../../hooks/useUsers";
 import { useAgences } from "../../hooks/useAgences";
+import { useSearchQuery } from "../../hooks/useSearchQuery";
+import { userService } from "../../services/userService";
 import { ROLE_LABELS } from "../../lib/constants";
 
 import Card, { CardContent } from "../../components/ui/Card";
@@ -25,7 +27,7 @@ export default function Utilisateurs() {
   const navigate = useNavigate();
   const { data: users = [], refetch } = useUsers();
   const { data: agences = [] } = useAgences();
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useSearchQuery();
   const [filterRole, setFilterRole] = useState("all");
   const [filterAgence, setFilterAgence] = useState("all");
   const [viewMode, setViewMode] = useState("grid");
@@ -88,24 +90,12 @@ export default function Utilisateurs() {
       if (form.agence_id !== "none") {
         payload.agence_id = Number(form.agence_id);
       }
-      await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:8000"}/api/auth/chef_central/register`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-        },
-        body: JSON.stringify(payload),
-      }).then(async (res) => {
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          throw new Error(err.detail || "Erreur lors de la creation de l'utilisateur.");
-        }
-      });
+      await userService.create(payload);
       setShowCreate(false);
       setForm({ nom: "", prenom: "", email: "", password: "", role: "avocat", agence_id: "none" });
       refetch();
     } catch (err) {
-      setFormError(err.message || "Erreur lors de la creation de l'utilisateur.");
+      setFormError(err.response?.data?.detail || "Erreur lors de la creation de l'utilisateur.");
     } finally {
       setCreating(false);
     }

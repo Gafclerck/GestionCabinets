@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Search, X, Plus, Grid, List, User, Mail, Phone } from "lucide-react";
 import { useClients } from "../../hooks/useClients";
 import { clientService } from "../../services/clientService";
+import { useSearchQuery } from "../../hooks/useSearchQuery";
 import { TYPE_CLIENT_LABELS } from "../../lib/constants";
 
 import Card, { CardContent } from "../../components/ui/Card";
@@ -24,7 +25,7 @@ const PAGE_SIZE = 10;
 export default function Clients() {
   const navigate = useNavigate();
   const { data: clients = [], refetch } = useClients();
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useSearchQuery();
   const [viewMode, setViewMode] = useState("grid");
   const [page, setPage] = useState(1);
   const [showCreate, setShowCreate] = useState(false);

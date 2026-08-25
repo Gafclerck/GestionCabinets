@@ -1,5 +1,4 @@
 import logging
-import shutil
 from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import text
@@ -7,7 +6,6 @@ from sqlalchemy.orm import Session
 
 from app.core.db import engine
 from app.core.security import hash_password
-from app.core.storage import UPLOAD_DIR
 from app.models.Agence import Agence
 from app.models.User import User, UserRole
 from app.models.Client import Client, ClientType
@@ -326,9 +324,6 @@ def wipe(session: Session) -> None:
     else:
         session.execute(text(f"TRUNCATE TABLE {', '.join(tables)} RESTART IDENTITY CASCADE"))
     session.commit()
-    if UPLOAD_DIR.exists():
-        shutil.rmtree(UPLOAD_DIR)
-    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
     logger.info("Donnees effacees et identites reinitialisees")
 
 

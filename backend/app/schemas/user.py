@@ -50,10 +50,23 @@ class UserResponse(BaseModel):
 class UserUpdateRequest(BaseModel):
     nom: Optional[str] = Field(None, min_length=1, max_length=100)
     prenom: Optional[str] = Field(None, min_length=1, max_length=100)
+    email: Optional[EmailStr] = None
     password: Optional[str] = Field(None, min_length=8, max_length=100)
     actif: Optional[bool] = None
     role: Optional[UserRole] = None
     agence_id: Optional[int] = Field(None, gt=0)
+
+
+class UpdateProfileRequest(BaseModel):
+    # Profil autonome : l'utilisateur ne peut PAS modifier role / agence / actif.
+    nom: Optional[str] = Field(None, min_length=1, max_length=100)
+    prenom: Optional[str] = Field(None, min_length=1, max_length=100)
+    email: Optional[EmailStr] = None
+
+
+class ChangePasswordRequest(BaseModel):
+    ancien_mot_de_passe: str = Field(..., min_length=1, max_length=100)
+    nouveau_mot_de_passe: str = Field(..., min_length=8, max_length=100)
 
 
 class Token(BaseModel):

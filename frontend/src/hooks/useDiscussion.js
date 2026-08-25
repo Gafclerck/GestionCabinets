@@ -7,7 +7,16 @@ const RECONNECT_MAX_MS = 10000;
 
 function buildWsUrl(discussionId) {
   const token = localStorage.getItem("access_token");
-  const baseUrl = (import.meta.env.VITE_API_URL || "http://localhost:8000").replace(/^http/, "ws");
+  const configured = import.meta.env.VITE_API_URL;
+  let baseUrl;
+  if (configured && !configured.startsWith("http")) {
+    // Base relative (ex: "/" en prod dockerisee derriere nginx) : le WS se
+    // connecte a la meme origine que la page, en ws ou wss selon le protocole.
+    const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
+    baseUrl = `${proto}//${window.location.host}`;
+  } else {
+    baseUrl = (configured || "http://localhost:8000").replace(/^http/, "ws");
+  }
   return `${baseUrl}/api/ws/discussion/${discussionId}?token=${encodeURIComponent(token || "")}`;
 }
 

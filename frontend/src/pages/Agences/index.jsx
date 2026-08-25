@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Search, X, Plus, Grid, List, Building2, MapPin, Phone } from "lucide-react";
 import { useAgences } from "../../hooks/useAgences";
 import { agenceService } from "../../services/agenceService";
+import { useSearchQuery } from "../../hooks/useSearchQuery";
 
 import Card, { CardContent } from "../../components/ui/Card";
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "../../components/ui/Table";
@@ -19,7 +20,7 @@ const PAGE_SIZE = 10;
 export default function Agences() {
   const navigate = useNavigate();
   const { data: agences = [], refetch } = useAgences();
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useSearchQuery();
   const [viewMode, setViewMode] = useState("grid");
   const [page, setPage] = useState(1);
   const [showCreate, setShowCreate] = useState(false);

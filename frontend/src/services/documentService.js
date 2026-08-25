@@ -23,6 +23,11 @@ export const documentService = {
     await api.delete(`${BASE}/${id}`);
   },
 
+  update: async (id, payload) => {
+    const { data } = await api.patch(`${BASE}/${id}`, payload);
+    return data;
+  },
+
   download: async (id) => {
     const response = await api.get(`${BASE}/${id}/fichier`, { responseType: "blob" });
     return response;

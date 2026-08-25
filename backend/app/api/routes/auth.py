@@ -5,11 +5,12 @@ from app.schemas.user import (
     RegistrationRequest,
     ChefCentralRegisterRequest,
     ChefAgenceRegisterRequest,
+    ChangePasswordRequest,
     TokenResponse,
     UserResponse,
 )
 from app.core.deps import SessionDep, CurrentUser, TokenDep, RequireChefCentral, RequireChefAgence, limiter
-from app.services.auth_service import register_user, login_user, refresh_access_token
+from app.services.auth_service import register_user, login_user, refresh_access_token, change_password
 from app.models.User import UserRole
 
 router = APIRouter()
@@ -61,3 +62,13 @@ def refresh(
 @router.get("/me")
 def get_user(user: CurrentUser) -> UserResponse:
     return user
+
+
+@router.post("/change-password")
+def change_user_password(
+    data: ChangePasswordRequest,
+    db: SessionDep,
+    current_user: CurrentUser,
+) -> dict:
+    change_password(db, current_user, data.ancien_mot_de_passe, data.nouveau_mot_de_passe)
+    return {"detail": "Mot de passe modifie avec succes"}

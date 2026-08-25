@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Folder, TrendingUp, Clock, CheckCircle, Repeat,
   List, Plus, ArrowRight, Users, Home, MessageSquare,
@@ -47,7 +47,7 @@ function GerantCentralDashboard() {
       <div className="max-w-[1280px] mx-auto">
         <div className="mb-7">
           <h1 className="text-2xl font-bold text-foreground mb-1">Tableau de bord</h1>
-          <p className="text-sm text-muted-foreground">Vue d'ensemble de l'activité — Cabinet Diop & Associés</p>
+          <p className="text-sm text-muted-foreground">Vue d'ensemble de l'activité - Cabinet Diop & Associés</p>
         </div>
 
         <div className="grid grid-cols-4 gap-4 mb-8">
@@ -113,11 +113,11 @@ function GerantCentralDashboard() {
         </div>
 
         <div className="grid grid-cols-[1fr_auto] gap-6 items-start">
-          <SectionCard title="Transferts en attente d'approbation" subtitle="Lecture seule — approbation depuis la fiche dossier">
+          <SectionCard title="Transferts à ré-affecter" subtitle="Affectation depuis la fiche dossier">
             {transfertsPendants.length === 0 ? (
               <div className="text-center py-8">
                 <CheckCircle size={28} className="text-success mx-auto mb-2" />
-                <p className="text-[13px] text-muted-foreground">Aucun transfert en attente</p>
+                <p className="text-[13px] text-muted-foreground">Aucun transfert à ré-affecter</p>
               </div>
             ) : (
               <div className="flex flex-col">
@@ -213,12 +213,12 @@ function AvocatEnChefDashboard({ user }) {
       <div className="max-w-[1280px] mx-auto">
         <div className="mb-7">
           <h1 className="text-2xl font-bold text-foreground mb-1">Tableau de bord</h1>
-          <p className="text-sm text-muted-foreground">{monAgence?.nom ?? "Mon agence"} — vue de l'Avocat en chef</p>
+          <p className="text-sm text-muted-foreground">{monAgence?.nom ?? "Mon agence"} - vue de l'Avocat en chef</p>
         </div>
 
         <div className="grid grid-cols-3 gap-4 mb-8">
           <KpiCard label="Dossiers en file d'affectation" value={fileAttente.length} icon={List} accent />
-          <KpiCard label="Transferts à approuver" value={transfertsATraiter.length} icon={Repeat} warn />
+          <KpiCard label="Transferts à ré-affecter" value={transfertsATraiter.length} icon={Repeat} warn />
           <KpiCard label="Dossiers actifs dans l'agence" value={dossiersAgence.length} icon={Folder} />
         </div>
 
@@ -268,11 +268,11 @@ function AvocatEnChefDashboard({ user }) {
           </SectionCard>
 
           <div className="flex flex-col gap-6">
-            <SectionCard title="Transferts à traiter" subtitle="Demandes en attente dans mon agence">
+<SectionCard title="Transferts à ré-affecter" subtitle="Dossiers en attente de réaffectation dans mon agence">
               {transfertsATraiter.length === 0 ? (
-                <div className="text-center py-5">
-                  <CheckCircle size={24} className="text-success mx-auto mb-2" />
-                  <p className="text-[13px] text-muted-foreground">Aucune demande de transfert en attente</p>
+                <div className="flex flex-col items-center py-8">
+                  <Repeat size={28} className="text-success mx-auto mb-2 text-muted-foreground" />
+                  <p className="text-[13px] text-muted-foreground">Aucun transfert à ré-affecter</p>
                 </div>
               ) : (
                 <div className="flex flex-col">
@@ -315,7 +315,7 @@ function AvocatEnChefDashboard({ user }) {
           </div>
         </div>
 
-        <SectionCard title={`Charge de l'agence — ${monAgence?.ville ?? "Mon agence"}`} subtitle="Répartition des dossiers actifs par avocat">
+        <SectionCard title={`Charge de l'agence - ${monAgence?.ville ?? "Mon agence"}`} subtitle="Répartition des dossiers actifs par avocat">
           {chargeAgence.length === 0 ? (
             <p className="text-[13px] text-muted-foreground py-4">Aucun avocat dans cette agence.</p>
           ) : (
@@ -470,8 +470,15 @@ function AvocatDashboard({ user }) {
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
   if (!user) return null;
   if (user.role === "chef_agence") return <AvocatEnChefDashboard user={user} />;
   if (user.role === "avocat") return <AvocatDashboard user={user} />;
+  // Le chef central peut restreindre sa vue a sa propre agence (dropdown de la
+  // topbar, ?agence=<id>) : on reutilise la vue chef d'agence, qui filtre deja
+  // par user.agence_id (son agence siege). Absent/"all" = vue globale.
+  if (String(searchParams.get("agence")) === String(user.agence_id)) {
+    return <AvocatEnChefDashboard user={user} />;
+  }
   return <GerantCentralDashboard user={user} />;
 }

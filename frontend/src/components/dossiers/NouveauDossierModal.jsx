@@ -144,7 +144,7 @@ function StepDossier({ dossier, setDossier }) {
         />
       </div>
 
-      {/* Type d'affaire — loaded from referentiel, uses id as value */}
+      {/* Type d'affaire - loaded from referentiel, uses id as value */}
       <div className="space-y-1">
         <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
           Type d'affaire *
@@ -284,7 +284,7 @@ export default function NouveauDossierModal({ open, onClose, onCreated }) {
   // Client selection
   const [selectedClientId, setSelectedClientId] = useState(null);
 
-  // Dossier state — field names match backend DossierCreate schema
+  // Dossier state - field names match backend DossierCreate schema
   const [dossier, setDossier] = useState({
     titre: "",
     type_affaire_id: "",

@@ -1,4 +1,4 @@
-# SPECS.md — Frontend Specifications
+# SPECS.md - Frontend Specifications
 
 > **Purpose**: This file is the single source of truth for any AI assistant working on this frontend.
 > Read this before making ANY changes. Every design decision, convention, and constraint is documented here.
@@ -7,7 +7,7 @@
 
 ## 1. Project Identity
 
-- **Name**: Cabinet Diop & Associés — Plateforme de gestion intelligente des dossiers juridiques
+- **Name**: Cabinet Diop & Associés - Plateforme de gestion intelligente des dossiers juridiques
 - **Domain**: Senegalese law firm case management (French-speaking users)
 - **Context**: Hackathon project, early stage
 - **Repository**: Monorepo at `D:\Hackaton\` with `frontend/` and `backend/` directories
@@ -132,17 +132,17 @@ All tokens are defined in `src/index.css` via CSS custom properties in `:root`, 
 
 | Token | Value | Usage |
 |-------|-------|-------|
-| `--primary` | `#1B2A4A` | Navy — sidebar bg, buttons, headings |
-| `--accent` | `#9C7A3C` | Gold — highlights, badges, active states |
-| `--background` | `#F5F2ED` | Warm beige — page background |
-| `--card` | `#FDFCFA` | Near-white — card backgrounds |
-| `--secondary` | `#EAE6DF` | Light beige — secondary surfaces, tags |
-| `--border` | `#D8D3C8` | Warm gray — all borders |
-| `--destructive` | `#B3261E` | Red — delete, errors |
-| `--success` | `#2F7A54` | Green — completed, positive |
+| `--primary` | `#1B2A4A` | Navy - sidebar bg, buttons, headings |
+| `--accent` | `#9C7A3C` | Gold - highlights, badges, active states |
+| `--background` | `#F5F2ED` | Warm beige - page background |
+| `--card` | `#FDFCFA` | Near-white - card backgrounds |
+| `--secondary` | `#EAE6DF` | Light beige - secondary surfaces, tags |
+| `--border` | `#D8D3C8` | Warm gray - all borders |
+| `--destructive` | `#B3261E` | Red - delete, errors |
+| `--success` | `#2F7A54` | Green - completed, positive |
 | `--warning` | `#B7791F` | Amber - warnings, high priority |
-| `--muted-foreground` | `#6B6860` | Gray — secondary text |
-| `--foreground` | `#27272A` | Near-black — primary text |
+| `--muted-foreground` | `#6B6860` | Gray - secondary text |
+| `--foreground` | `#27272A` | Near-black - primary text |
 
 ### Sidebar Tokens
 
@@ -168,22 +168,22 @@ Each status has a background and text color pair. Aligned with backend `StatutDo
 ### How to use tokens
 
 ```jsx
-// Good — use Tailwind utility classes referencing tokens
+// Good - use Tailwind utility classes referencing tokens
 <div className="bg-primary text-primary-foreground p-4">
 <button className="border border-border rounded hover:bg-secondary">
 
-// Good — for dynamic values, use inline style
+// Good - for dynamic values, use inline style
 <div style={{ width: `${pct}%` }}>
 
 // NEVER hardcode colors that exist as tokens
-<div className="bg-[#1B2A4A]">  // BAD — use bg-primary instead
+<div className="bg-[#1B2A4A]">  // BAD - use bg-primary instead
 ```
 
 ### Typography & Spacing
 
 - Font: Inter (system-ui fallback)
 - Base font size: 16px
-- Border radius: `0.375rem` (6px) — NOT rounded-2xl (that was PR-2's mistake)
+- Border radius: `0.375rem` (6px) - NOT rounded-2xl (that was PR-2's mistake)
 - Small text: `text-[11px]`, `text-[13px]`
 - Medium text: `text-sm` (14px)
 
@@ -229,7 +229,7 @@ import Button from "@/components/ui/Button";
 <Badge variant="info">Info</Badge>               // bg-accent
 ```
 
-### Dialog (`components/ui/Dialog.jsx`) — Radix-based
+### Dialog (`components/ui/Dialog.jsx`) - Radix-based
 
 ```jsx
 import {
@@ -255,7 +255,7 @@ import {
 </Dialog>
 ```
 
-### Tabs (`components/ui/Tabs.jsx`) — Radix-based
+### Tabs (`components/ui/Tabs.jsx`) - Radix-based
 
 ```jsx
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/Tabs";
@@ -313,7 +313,7 @@ Configured via `VITE_API_URL` env var (defaults to `http://localhost:8000`).
 ### Authentication Flow
 
 1. **Login**: `POST /api/auth/login` with `application/x-www-form-urlencoded` body:
-   - `username` = email (NOT `email` field — OAuth2 spec uses `username`)
+   - `username` = email (NOT `email` field - OAuth2 spec uses `username`)
    - `password` = password
    - Returns: `{ access_token, refresh_token, token_type: "bearer" }`
 
@@ -438,11 +438,11 @@ en_attente → en_attente_affectation → en_cours → termine → archive
 ```
 
 **Status descriptions** (aligned with backend `StatutDossier` enum):
-1. `en_attente` — Just created, waiting for initial processing
-2. `en_attente_affectation` — Waiting for office/lawyer assignment (or after transfer)
-3. `en_cours` — Lawyer actively working on the case
-4. `termine` — Case resolved and closed
-5. `archive` — Stored for historical records
+1. `en_attente` - Just created, waiting for initial processing
+2. `en_attente_affectation` - Waiting for office/lawyer assignment (or after transfer)
+3. `en_cours` - Lawyer actively working on the case
+4. `termine` - Case resolved and closed
+5. `archive` - Stored for historical records
 
 ### Role Permissions
 
@@ -492,7 +492,7 @@ avocat:        ["dashboard", "dossiers", "clients", "parametres"]
 ### Auth Patterns
 
 ```jsx
-// PublicRoute — redirects away if already logged in
+// PublicRoute - redirects away if already logged in
 function PublicRoute({ children }) {
   const { user, loading } = useAuth();
   if (loading) return null;
@@ -500,7 +500,7 @@ function PublicRoute({ children }) {
   return children;
 }
 
-// ProtectedRoute — wraps AppLayout, redirects to /login if not authenticated
+// ProtectedRoute - wraps AppLayout, redirects to /login if not authenticated
 <ProtectedRoute><AppLayout /></ProtectedRoute>
 ```
 
@@ -514,7 +514,7 @@ All data lives in `src/data/mockData.js`. When integrating with the real backend
 
 ```js
 // Agence
-{ id: "ag-1", nom: "Cabinet Diop & Associés — Siège", ville: "Dakar", est_siege: true }
+{ id: "ag-1", nom: "Cabinet Diop & Associés - Siège", ville: "Dakar", est_siege: true }
 
 // Utilisateur
 { id: "u-1", nom: "Fatou Diop", prenom: "Fatou", role: "chef_central", agence_id: "ag-1", email: "f.diop@cabinet.sn", specialites: [...], charge_actuelle: 4 }
@@ -604,11 +604,11 @@ import StatusBadge from "../../components/ui/StatusBadge";
 ### Styling Rules
 
 1. **Always use design tokens** via Tailwind classes (`bg-primary`, `text-accent`, `border-border`)
-2. **Never use react-icons** — use `lucide-react`
+2. **Never use react-icons** - use `lucide-react`
 3. **Use `cn()`** for conditional class merging
 4. **Small font sizes**: Use `text-[11px]`, `text-[13px]` for compact UI (not arbitrary Tailwind sizes)
 5. **Border radius**: `rounded` (4px) or `rounded-md` (6px). Avoid `rounded-2xl` (too round for this design)
-6. **Input height**: `h-9` or `h-10` — consistent with Figma
+6. **Input height**: `h-9` or `h-10` - consistent with Figma
 7. **Touch targets**: Minimum `min-h-[44px]` for interactive elements
 
 ---
@@ -633,7 +633,7 @@ import StatusBadge from "../../components/ui/StatusBadge";
 ### Tailwind v4 Specifics
 
 ```css
-/* This is the config — NOT tailwind.config.js */
+/* This is the config - NOT tailwind.config.js */
 @theme inline {
   --color-primary: var(--primary);
   --color-accent: var(--accent);
@@ -819,3 +819,4 @@ These features exist in the frontend but have no backend endpoints yet:
 
 *Last updated: July 15, 2026*
 *Branch: develop*
+

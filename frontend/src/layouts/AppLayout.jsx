@@ -1,6 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
-import { Plus } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import Sidebar from "../components/layout/Sidebar";
 import Topbar from "../components/layout/Topbar";
@@ -10,6 +9,15 @@ export default function AppLayout() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [showNouveauDossier, setShowNouveauDossier] = useState(false);
+
+  // Le bouton "Nouveau dossier" vit dans la Topbar (le FAB flottant qui cachait
+  // du contenu a ete retire). Les raccourcis du dashboard dispatch un evenement
+  // cabinet:open-nouveau-dossier : on l'ecoute ici pour les garder fonctionnels.
+  useEffect(() => {
+    const handler = () => setShowNouveauDossier(true);
+    window.addEventListener("cabinet:open-nouveau-dossier", handler);
+    return () => window.removeEventListener("cabinet:open-nouveau-dossier", handler);
+  }, []);
 
   if (loading) {
     return (
@@ -28,19 +36,10 @@ export default function AppLayout() {
       <Sidebar user={user} />
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Topbar />
+        <Topbar onNewDossier={() => setShowNouveauDossier(true)} />
 
         <main className="flex-1 overflow-hidden flex flex-col">
           <Outlet />
-
-          <button
-            onClick={() => setShowNouveauDossier(true)}
-            className="fixed bottom-8 right-8 flex items-center gap-2 bg-primary text-primary-foreground border-none rounded-[28px] px-5 py-3 text-sm font-semibold cursor-pointer shadow-lg hover:bg-sidebar-accent hover:-translate-y-0.5 hover:shadow-xl transition-all duration-150 z-40"
-            aria-label="Créer un nouveau dossier"
-          >
-            <Plus size={18} />
-            Nouveau dossier
-          </button>
         </main>
       </div>
 
