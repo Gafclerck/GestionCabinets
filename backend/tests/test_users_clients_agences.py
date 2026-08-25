@@ -7,6 +7,19 @@ from app.models.Client import Client
 from conftest import make_agence, make_dossier, make_type_affaire, make_user
 
 
+def _user_payload(**overrides):
+    suffix = uuid.uuid4().hex[:8]
+    payload = {
+        "nom": "Diop",
+        "prenom": "Awa",
+        "email": f"awa.{suffix}@example.com",
+        "password": "motdepasse123",
+        "role": "avocat",
+    }
+    payload.update(overrides)
+    return payload
+
+
 def _client_payload(**overrides):
     suffix = uuid.uuid4().hex[:8]
     payload = {
@@ -29,6 +42,73 @@ def _agence_payload(**overrides):
     }
     payload.update(overrides)
     return payload
+
+
+# --- Tests de creation d'utilisateur (POST /api/user) ---
+
+
+def test_create_user_refuse_sans_token(client):
+    response = client.post("/api/user", json=_user_payload())
+    assert response.status_code == 401
+
+
+def test_create_user_refuse_pour_avocat(client, avocat, headers):
+    response = client.post("/api/user", json=_user_payload(), headers=headers(avocat))
+    assert response.status_code == 403
+
+
+def test_create_user_chef_central_peut_creer_chef_agence(client, chef_central, headers):
+    payload = _user_payload(role="chef_agence")
+    response = client.post("/api/user", json=payload, headers=headers(chef_central))
+    assert response.status_code == 201
+    body = response.json()
+    assert body["role"] == "chef_agence"
+    assert body["actif"] is True
+    assert "password" not in body
+
+
+def test_create_user_chef_central_peut_creer_avocat(client, chef_central, headers):
+    response = client.post("/api/user", json=_user_payload(), headers=headers(chef_central))
+    assert response.status_code == 201
+    assert response.json()["role"] == "avocat"
+
+
+def test_create_user_chef_central_ne_peut_pas_creer_chef_central(client, chef_central, headers):
+    payload = _user_payload(role="chef_central")
+    response = client.post("/api/user", json=payload, headers=headers(chef_central))
+    assert response.status_code == 403
+
+
+def test_create_user_chef_agence_peut_creer_avocat(client, chef_agence, headers):
+    response = client.post("/api/user", json=_user_payload(), headers=headers(chef_agence))
+    assert response.status_code == 201
+    assert response.json()["role"] == "avocat"
+
+
+def test_create_user_chef_agence_ne_peut_pas_creer_chef_agence(client, chef_agence, headers):
+    payload = _user_payload(role="chef_agence")
+    response = client.post("/api/user", json=payload, headers=headers(chef_agence))
+    assert response.status_code == 403
+
+
+def test_create_user_chef_agence_ne_peut_pas_creer_chef_central(client, chef_agence, headers):
+    payload = _user_payload(role="chef_central")
+    response = client.post("/api/user", json=payload, headers=headers(chef_agence))
+    assert response.status_code == 403
+
+
+def test_create_user_email_duplique(client, chef_central, headers):
+    payload = _user_payload(email="dup@example.com")
+    assert client.post("/api/user", json=payload, headers=headers(chef_central)).status_code == 201
+    assert client.post("/api/user", json=payload, headers=headers(chef_central)).status_code == 400
+
+
+def test_create_user_mot_de_passe_trop_court(client, chef_central, headers):
+    response = client.post("/api/user", json=_user_payload(password="court"), headers=headers(chef_central))
+    assert response.status_code == 422
+
+
+# --- Tests existants ---
 
 
 def test_patch_me_modifie_le_profil(client, avocat, headers):

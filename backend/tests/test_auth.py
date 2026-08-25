@@ -1,6 +1,5 @@
-# Tests du module auth : enregistrement via chef_central et chef_agence,
-# login, refresh, profil me, changement de mot de passe, compte desactive,
-# rate-limiting du login.
+# Tests du module auth : login, refresh, profil me, changement de mot de passe,
+# compte desactive, rate-limiting du login.
 
 import uuid
 from conftest import make_user
@@ -10,62 +9,9 @@ def _login(client, email, password):
     return client.post("/api/auth/login", data={"username": email, "password": password})
 
 
-def test_register_chef_central_refuse_sans_token(client):
-    payload = {"nom": "Diop", "prenom": "Awa", "email": "awa@example.com", "password": "motdepasse123"}
-    response = client.post("/api/auth/chef_central/register", json=payload)
-    assert response.status_code == 401
-
-
-def test_register_chef_central_refuse_pour_un_avocat(client, avocat, headers):
-    payload = {"nom": "Diop", "prenom": "Awa", "email": "awa@example.com", "password": "motdepasse123"}
-    response = client.post(
-        "/api/auth/chef_central/register", json=payload, headers=headers(avocat)
-    )
-    assert response.status_code == 403
-
-
-def test_register_chef_central_force_le_role_chef_central(client, chef_central, headers):
-    payload = {"nom": "Diop", "prenom": "Awa", "email": "awa@example.com", "password": "motdepasse123"}
-    response = client.post(
-        "/api/auth/chef_central/register",
-        json=payload,
-        headers=headers(chef_central),
-    )
-    assert response.status_code == 200
-    assert response.json()["role"] == "chef_central"
-
-
-def test_register_chef_central_rejette_role_explicite(client, chef_central, headers):
-    payload = {"nom": "Diop", "prenom": "Awa", "email": "awa@example.com", "password": "motdepasse123", "role": "chef_agence"}
-    response = client.post(
-        "/api/auth/chef_central/register",
-        json=payload,
-        headers=headers(chef_central),
-    )
-    assert response.status_code == 200
-    assert response.json()["role"] == "chef_central"
-
-
-def test_register_chef_agence_force_le_role_avocat(client, chef_agence, headers):
-    payload = {"nom": "Diop", "prenom": "Awa", "email": "awa@example.com", "password": "motdepasse123"}
-    response = client.post(
-        "/api/auth/chef_agence/register",
-        json=payload,
-        headers=headers(chef_agence),
-    )
-    assert response.status_code == 200
-    assert response.json()["role"] == "avocat"
-
-
-def test_register_chef_central_email_duplique(client, chef_central, headers):
-    payload = {"nom": "Diop", "prenom": "Awa", "email": "dup@example.com", "password": "motdepasse123"}
-    assert client.post("/api/auth/chef_central/register", json=payload, headers=headers(chef_central)).status_code == 200
-    assert client.post("/api/auth/chef_central/register", json=payload, headers=headers(chef_central)).status_code == 400
-
-
 def test_login_ok_et_me(client, db):
     email = f"login.{uuid.uuid4().hex[:8]}@example.com"
-    user = make_user(db, email=email, password="motdepasse123")
+    make_user(db, email=email, password="motdepasse123")
 
     response = _login(client, email, "motdepasse123")
     assert response.status_code == 200
