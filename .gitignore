@@ -3,6 +3,7 @@ Strategie_Prompts_Figma_Make.md
 OUT_OF_SCOPE.md
 COMMENTS.md
 AI_*.md
+DESIGN_PATTERN.md
 
 # Config Docker locale (contient les mots de passe de la stack)
 .env

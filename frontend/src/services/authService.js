@@ -22,11 +22,6 @@ export async function getProfile() {
   return data;
 }
 
-export async function register(userData) {
-  const { data } = await api.post("/api/auth/register", userData);
-  return data;
-}
-
 export async function changePassword(payload) {
   const { data } = await api.post("/api/auth/change-password", payload);
   return data;

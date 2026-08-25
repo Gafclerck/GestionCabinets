@@ -21,16 +21,8 @@ class BaseRegistrationRequest(BaseModel):
     #     return v
 
 
-class RegistrationRequest(BaseRegistrationRequest):
+class CreateUserRequest(BaseRegistrationRequest):
     role: UserRole = Field(...)
-
-
-class ChefCentralRegisterRequest(BaseRegistrationRequest):
-    role: UserRole = Field(...)
-
-
-class ChefAgenceRegisterRequest(BaseRegistrationRequest):
-    pass
 
 
 class UserResponse(BaseModel):
