@@ -8,7 +8,7 @@ authors = [
 ]
 requires-python = ">=3.13"
 dependencies = [
-    "fastapi",
+    "fastapi[standard]",
     "uvicorn[standard]",
     "sqlalchemy",
     "alembic",
@@ -34,3 +34,8 @@ dev = [
 # L'app est un module plat (app/main.py) lance par uvicorn, pas un package
 # installable : uv sync ne doit installer que les dependances.
 package = false
+
+# Requis par le CLI fastapi (utilise par FastAPI Cloud) pour localiser l'app
+# dans notre layout plat.
+[tool.fastapi]
+entrypoint = "app.main:app"
