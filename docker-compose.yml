@@ -43,6 +43,7 @@ services:
       retries: 10
 
   backend:
+    image: hackaton-backend
     build: ./backend
     restart: unless-stopped
     depends_on:
@@ -68,11 +69,12 @@ services:
       backend:
         condition: service_healthy
     ports:
-      - "5173:80"
+      - "5173:5173"
 
   # One-shot : peuple la base avec des donnees de demo, puis se termine.
   # Usage : docker compose --profile seed up seed
   seed:
+    image: hackaton-backend
     build: ./backend
     profiles: ["seed"]
     depends_on:

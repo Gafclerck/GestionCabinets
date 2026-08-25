@@ -24,11 +24,9 @@ Il est responsable de :
 # Terminal 1 : Backend
 cd backend
 cp .env.example .env          # puis remplir les valeurs
-python -m venv .venv
-.venv\Scripts\activate         # Windows (source .venv/bin/activate sur macOS/Linux)
-pip install -r requirements.txt
-alembic upgrade head
-uvicorn app.main:app --reload  # http://localhost:8000
+uv sync                       # cree .venv et installe uv.lock
+uv run alembic upgrade head
+uv run uvicorn app.main:app --reload  # http://localhost:8000
 
 # Terminal 2 : Frontend
 cd frontend

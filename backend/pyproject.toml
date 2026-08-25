@@ -1,17 +1,36 @@
 [project]
 name = "backend"
 version = "0.1.0"
-description = "Add your description here"
+description = "API de gestion de dossiers juridiques - FastAPI + SQLAlchemy"
 readme = "README.md"
 authors = [
     { name = "Abdoul-Gafar AMADOU", email = "abdoulgafaramadou938@gmail.com" }
 ]
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "sqlalchemy",
+    "alembic",
+    "psycopg2-binary",
+    "pydantic",
+    "pydantic-settings",
+    "python-dotenv",
+    "python-multipart",
+    "pyjwt",
+    "pwdlib[argon2]",
+    "email-validator",
+    "boto3",
+    "slowapi",
+]
 
-[project.scripts]
-backend = "backend:main"
+[dependency-groups]
+dev = [
+    "pytest",
+    "httpx",
+]
 
-[build-system]
-requires = ["uv_build>=0.12.5,<0.13.0"]
-build-backend = "uv_build"
+[tool.uv]
+# L'app est un module plat (app/main.py) lance par uvicorn, pas un package
+# installable : uv sync ne doit installer que les dependances.
+package = false

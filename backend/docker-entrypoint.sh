@@ -1,6 +1,12 @@
 #!/bin/bash
 set -e
 
+# Si une commande est passee au conteneur (ex: seed via docker compose),
+# on l'execute telle quelle. Sinon, demarrage serveur par defaut.
+if [ "$#" -gt 0 ]; then
+    exec "$@"
+fi
+
 echo "[entrypoint] Application des migrations Alembic..."
 alembic upgrade head
 

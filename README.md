@@ -148,24 +148,16 @@ python -c "import secrets; print(secrets.token_hex(32))"
 
 ### Créer l'environnement virtuel et installer les dépendances
 
+Le backend utilise **uv** (https://docs.astral.sh/uv/). L'installer une seule fois :
+
 ```bash
-python -m venv .venv
+pip install uv
 ```
 
-Activer l'environnement virtuel :
+Puis, depuis `backend/`, creer le venv et installer les dependances verrouillees :
 
 ```bash
-# Windows
-.venv\Scripts\activate
-
-# macOS / Linux
-source .venv/bin/activate
-```
-
-Installer les dependances :
-
-```bash
-pip install -r requirements.txt
+uv sync
 ```
 
 ### Lancer les migrations Alembic
@@ -173,13 +165,13 @@ pip install -r requirements.txt
 Appliquer toutes les migrations pour creer les tables :
 
 ```bash
-alembic upgrade head
+uv run alembic upgrade head
 ```
 
 ### Lancer le backend
 
 ```bash
-uvicorn app.main:app --reload
+uv run uvicorn app.main:app --reload
 ```
 
 Le backend est accessible sur :
@@ -250,11 +242,9 @@ createdb -U postgres hackaton_dev
 # 2. Backend
 cd backend
 cp .env.example .env          # puis remplir les valeurs
-python -m venv .venv
-.venv\Scripts\activate         # Windows
-pip install -r requirements.txt
-alembic upgrade head
-uvicorn app.main:app --reload
+uv sync                       # cree .venv et installe uv.lock
+uv run alembic upgrade head
+uv run uvicorn app.main:app --reload
 
 # 3. Frontend (dans un autre terminal)
 cd frontend
