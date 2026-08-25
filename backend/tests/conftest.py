@@ -1,20 +1,15 @@
 # Ce fichier doit rester AVANT tout import de "app" : les variables
 # d'environnement priment sur le fichier .env dans pydantic-settings.
 # On force donc la configuration de test ici, sinon l'engine de
-# app.core.db serait construit sur la base Postgres de dev (.env actuel).
+# app.core.db serait construit sur la base pointee par le .env actuel.
 import os
-
-os.environ["TESTING_MODE"] = "True"
-os.environ["DEVEL_MODE"] = "False"
-os.environ["PRODUCTION_MODE"] = "False"
 
 TEST_DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_api.db").replace("\\", "/")
 TEST_DB_URL = f"sqlite:///{TEST_DB_PATH}"
 
 os.environ["DATABASE_URL"] = TEST_DB_URL
-os.environ["DATABASE_URL_TEST"] = TEST_DB_URL
 os.environ.setdefault("SECRET_KEY", "cle-de-test-tres-longue-pour-hmac-sha256-0123456789")
-os.environ.setdefault("SUPER_USER_EMAIL", "admin@test.local")
+os.environ.setdefault("SUPER_USER_EMAIL", "admin@example.com")
 os.environ.setdefault("SUPER_USER_PASSWORD", "motdepasse-test")
 os.environ.setdefault("S3_ENDPOINT_URL", "https://compte-test.r2.cloudflarestorage.com")
 os.environ.setdefault("S3_ACCESS_KEY", "access-key-test")

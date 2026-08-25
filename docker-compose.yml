@@ -6,19 +6,12 @@
 # lu nativement par docker compose pour l'interpolation ${...}.
 
 x-backend-env: &backend-env
-  # La BDD conteneurisee est un Postgres local : on reutilise le slot DEVEL
-  # de la config existante au lieu d'ajouter un nouveau mode.
-  TESTING_MODE: "False"
-  DEVEL_MODE: "True"
-  PRODUCTION_MODE: "False"
+  # Un seul environnement declare : development. La base est la source de
+  # verite unique DATABASE_URL, pointee ici vers le Postgres conteneurise.
+  ENVIRONMENT: "development"
   DEBUG: "False"
-  DATABASE_URL_DEV: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
-  # Champs requis par Settings meme s'ils sont inutilisés en mode DEVEL.
   DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
-  DATABASE_URL_TEST: sqlite:///./test.db
   SECRET_KEY: ${SECRET_KEY:?SECRET_KEY requis dans .env}
-  SUPER_USER_EMAIL: ${SUPER_USER_EMAIL:?SUPER_USER_EMAIL requis dans .env}
-  SUPER_USER_PASSWORD: ${SUPER_USER_PASSWORD:?SUPER_USER_PASSWORD requis dans .env}
   ALLOWED_ORIGINS: '["http://localhost:5173"]'
   S3_ENDPOINT_URL: ${S3_ENDPOINT_URL:-https://placeholder.r2.cloudflarestorage.com}
   S3_ACCESS_KEY: ${S3_ACCESS_KEY:-placeholder}
