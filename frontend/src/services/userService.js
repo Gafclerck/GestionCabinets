@@ -4,7 +4,7 @@ const BASE = "/api/user";
 
 export const userService = {
   create: async (payload) => {
-    const { data } = await api.post("/api/auth/chef_central/register", payload);
+    const { data } = await api.post(BASE, payload);
     return data;
   },
 
