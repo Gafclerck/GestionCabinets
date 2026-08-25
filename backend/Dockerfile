@@ -15,19 +15,22 @@ RUN --mount=type=cache,target=/root/.cache/uv uv sync --frozen --no-dev
 
 FROM python:3.13-slim
 
+RUN addgroup --system app && adduser --system --ingroup app app
+
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PATH="/app/.venv/bin:$PATH"
 
 WORKDIR /app
 
-# Le venv est autonome (interpreteur cible identique aux deux stages).
 COPY --from=builder /app/.venv /app/.venv
 
 COPY . .
 
-RUN chmod +x docker-entrypoint.sh
+RUN chown -R app:app /app && chmod +x docker-entrypoint.sh
 
 EXPOSE 8000
+
+USER app
 
 ENTRYPOINT ["./docker-entrypoint.sh"]

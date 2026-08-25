@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     SECRET_KEY: str = DEV_SECRET_KEY
     ALGORITHM: str = "HS256"
-    ALLOWED_ORIGINS: list[str] = ["*"]
+    ALLOWED_ORIGINS: list[str] = ["http://localhost:5173"]
     DEBUG: bool = False
 
     SUPER_USER_EMAIL: str = "admin@example.com"
@@ -33,13 +33,13 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def check_production_safety(self):
-        # Garde-fou anti-drift : on refuse un deploiement production mal
-        # configure plutot que de demarrer sur des fondations jetables.
         if self.ENVIRONMENT == "production":
             if self.DATABASE_URL.startswith("sqlite"):
                 raise RuntimeError("Refus: ENVIRONMENT=production avec une base SQLite")
             if self.SECRET_KEY == DEV_SECRET_KEY:
                 raise RuntimeError("Refus: SECRET_KEY par defaut interdite en production")
+            if self.SUPER_USER_PASSWORD == "admin-changeme":
+                raise RuntimeError("Refus: SUPER_USER_PASSWORD par defaut interdite en production")
         return self
 
     class Config:

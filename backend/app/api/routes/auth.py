@@ -2,7 +2,6 @@ from fastapi import Depends, Request, status, APIRouter
 from fastapi.security import OAuth2PasswordRequestForm
 from typing import Annotated
 from app.schemas.user import (
-    RegistrationRequest,
     ChefCentralRegisterRequest,
     ChefAgenceRegisterRequest,
     ChangePasswordRequest,
@@ -16,18 +15,13 @@ from app.models.User import UserRole
 router = APIRouter()
 
 
-@router.post("/register")
-def register(user: RegistrationRequest, db: SessionDep) -> UserResponse:
-    return register_user(user, db, role=user.role)
-
-
 @router.post("/chef_central/register")
 def register_by_chef_central(
     user: ChefCentralRegisterRequest,
     db: SessionDep,
     current_user: RequireChefCentral,
 ) -> UserResponse:
-    return register_user(user, db, role=user.role)
+    return register_user(user, db, role=UserRole.CHEF_CENTRAL)
 
 
 @router.post("/chef_agence/register")
