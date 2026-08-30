@@ -10,7 +10,7 @@ from app.models.Agence import Agence
 from app.models.TypeAffaire import TypeAffaire
 from app.models.HistoriqueAction import HistoriqueAction
 from app.schemas.dossier import DossierCreate, DossierAffectation, DossierStatutUpdate, DossierRead, DossierUpdateRequest
-
+from app.services.notification_service import create_notification
 
 # Transitions de statut autorisees
 TRANSITIONS_VALIDES = {
@@ -238,7 +238,10 @@ def affecter_dossier(dossier_id: int, data: DossierAffectation, db: Session,user
     db.commit()
 
     db.refresh(dossier)
+    create_notification(user.id,"affectation","affectation du dossier")
     return _to_read(dossier, _latest_transfert_motif(db, dossier.id))
+
+
 
 
 def update_dossier(dossier_id: int, data: DossierUpdateRequest, user: User, db: Session) -> DossierRead:
@@ -337,6 +340,8 @@ def transfer_dossier(dossier_id: int, motif: str, user: User, db: Session) -> Do
     db.add(histo)
     db.commit()
     db.refresh(dossier)
+    create_notification(user.id,"transfert","transfert du dossier")
+
     return _to_read(dossier, motif)
 
 

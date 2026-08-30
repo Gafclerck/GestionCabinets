@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.api.routes import auth, client, agence, referentiel, dossier, user, discussion, ws, historique, document
+from app.api.routes import auth, client, agence, referentiel, dossier, user, discussion, ws, historique, document,notification
 
 api_router = APIRouter()
 
@@ -14,3 +14,4 @@ api_router.include_router(historique.router, prefix="/historique", tags=["histor
 api_router.include_router(discussion.router, prefix="/discussion", tags=["discussion"])
 api_router.include_router(ws.router, prefix="/ws", tags=["websocket"])
 api_router.include_router(document.router, prefix="/document", tags=["document"])
+api_router.include_router(notification.router,prefix="/notification", tags=["notification"])

@@ -172,4 +172,5 @@ def create_message(discussion_id: int, contenu: str, user: User, db: Session) ->
         .filter(MessageDiscussion.id == message.id)
         .first()
     )
+    create_notification(user.id,"reception","reception d'un message direct")
     return _to_message_read(message)

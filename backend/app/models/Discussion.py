@@ -1,10 +1,16 @@
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
-from sqlalchemy import Integer, String, Text, ForeignKey
+from sqlalchemy import Integer, String, Text, ForeignKey, Enum as SAEnum, func
 from app.core.base import Base
 from typing import List
 from datetime import datetime
+from enum import Enum
 
+class TypeDiscussionEnum(str,Enum):
+    DOSSIER="dossier"
+    DIRECT="direct"
+    AGENCE="agence"
+    GLOBAL="global"
 
 class Discussion(Base):
     __tablename__ = "discussion"
@@ -21,5 +27,10 @@ class Discussion(Base):
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
 
     dossier: Mapped["Dossier"] = relationship("Dossier", back_populates="discussions")
+    participants: Mapped["DiscussionParticipant"] = relationship("DiscussionParticipant", back_populates="discussion")
+
     created_by: Mapped["User"] = relationship("User", back_populates="discussions_crees")
     messages: Mapped[List["MessageDiscussion"]] = relationship("MessageDiscussion", back_populates="discussion")
+    type_discussion: Mapped[TypeDiscussionEnum]= mapped_column(SAEnum(TypeDiscussionEnum, native_enum=False, length=50), nullable=False)
+
+    agence_id: Mapped[int | None]= mapped_column(ForeignKey("agence.id"), nullable=False)

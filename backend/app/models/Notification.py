@@ -9,7 +9,7 @@ class Notification(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     destinataire_id: Mapped[int] = mapped_column(ForeignKey("user.id"), nullable=False)
-    dossier_id: Mapped[int] = mapped_column(ForeignKey("dossier.id"), nullable=False)
+    dossier_id: Mapped[int|None] = mapped_column(ForeignKey("dossier.id"), nullable=True)
     type: Mapped[str] = mapped_column(String(100), nullable=False)
     contenu: Mapped[str] = mapped_column(Text, nullable=False)
     lue: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
@@ -17,3 +17,4 @@ class Notification(Base):
 
     destinataire: Mapped["User"] = relationship("User", back_populates="notifications")
     dossier: Mapped["Dossier"] = relationship("Dossier", back_populates="notifications")
+    lien: Mapped[str | None]

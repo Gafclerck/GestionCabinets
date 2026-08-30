@@ -82,6 +82,8 @@ def upload_document(dossier_id: int, nom_fichier: str, content_type: str | None,
     db.add(histo)
     db.commit()
     db.refresh(document)
+    create_notification(user.id,"ajout_document","ajout d'un document")
+
     return _to_read(document)
 
 

@@ -43,6 +43,7 @@ class User(Base):
     messages_envoyes: Mapped[List["MessageDiscussion"]] = relationship(back_populates="auteur")
     notifications: Mapped[List["Notification"]] = relationship(back_populates="destinataire")
     discussions_crees: Mapped[List["Discussion"]] = relationship(back_populates="created_by")
+    discussions: Mapped[List["DiscussionParticipant"]] = relationship(back_populates="user")
 
     analyses_suggerees: Mapped[List["AnalyseIA"]] = relationship(
         back_populates="avocat_suggere", foreign_keys="AnalyseIA.avocat_suggere_id"

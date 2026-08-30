@@ -16,3 +16,4 @@ import app.models.Document
 import app.models.Discussion
 import app.models.Notification
 import app.models.MessageDiscussion
+import app.models.DiscussionParticipant
